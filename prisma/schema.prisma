@@ -1,0 +1,33 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  uuid String @id @db.Uuid
+  name String           //이름
+  studentNumber String @unique //학번
+  email String @unique  //이메일
+  consent Boolean 
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @map("updated_at") @updatedAt
+
+  isBbunRegistered Boolean @default(false) //기본값 false
+  profileImage String?  //프로필 이미지(base64로 인코딩)
+  department String?    //학과
+  MBTI String?          //MBTI
+  insta_ID String?      //인스타 아이디
+  description String?   @default("(추가 한 줄 소개)")//짧은 소개
+
+  @@map("user")
+}

@@ -1,13 +1,14 @@
-name: Update Kubernetes Cluster (Dev)
+name: Build Container And Update Kubernetes Cluster (Dev)
 
 on:
-  workflow_dispatch:
   push:
+    branches:
+      - main
     paths:
       - src/**
+      - libs/**
       - prisma/schema.prisma
-    branches:
-      - master
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
@@ -16,7 +17,7 @@ env:
 
 jobs:
   build:
-    name: Build docker image
+    name: Build docker Image
     runs-on: ubuntu-latest
 
     permissions:
@@ -29,9 +30,9 @@ jobs:
 
       - name: setup environment
         run: |
-          echo "API_VERSION=${{ github.run_number }}-${{ github.run_number }}" >> .env
+          echo "API_VERSION=${{ github.ref_name }}-${{ github.run_number }}" >> .env
 
-      - name: Login to the Container Registry
+      - name: Login to the Container registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}

@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - apps/api/**
+      - src/**
       - prisma/schema.prisma
     branches:
-      - main
+      - master
 
 env:
   REGISTRY: ghcr.io
@@ -53,7 +53,6 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./apps/api/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

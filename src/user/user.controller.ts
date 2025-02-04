@@ -13,6 +13,8 @@ import {
   UseInterceptors,
   UploadedFile,
   NotFoundException,
+  Patch,
+  Delete,
 } from '@nestjs/common';
 import { LoginDto } from './dto/req/login.dto';
 import { Request, Response, Express } from 'express';
@@ -25,25 +27,32 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiTags,
+  ApiBody,
+  ApiConsumes,
+  ApiResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { LogoutDto } from './dto/req/logout.dto';
 import { IdPGuard } from './guard/idp.guard';
-import { User } from '@prisma/client';
 import { GetUser } from './decorator/get-user.decorator';
-import { UserInfoRes } from './dto/res/userInfoRes.dto';
+import { UserInfoRes, UserRegistrationDto } from './dto/res/userInfoRes.dto';
 import { GetIdPUser } from './decorator/get-idp-user.decorator';
 import { UserInfo } from '@lib/infoteam-idp/types/userInfo.type';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { UpdateUserDto } from './dto/req/updateUser.dto';
+import { BbunUserResDto, BbunUserResListDto } from './dto/res/bbunUser.dto';
+import { ImageService } from 'src/image/image.service';
+import { CreateTempUserDto } from './dto/req/createUser.dto';
 
 @ApiTags('user')
-@ApiOAuth2(['email', 'profile', 'openid'], 'oauth2')
+@ApiOAuth2(['openid', 'email', 'profile', 'student_'], 'oauth2')
 @Controller('user')
 @UsePipes(ValidationPipe)
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly imageService: ImageService,
+  ) {}
 
   @ApiOperation({
     summary: 'Login with idp',
@@ -121,21 +130,8 @@ export class UserController {
   }
 
   @ApiOperation({
-    summary: 'post consent',
-    description: 'post consent to the user',
-  })
-  @ApiCreatedResponse({ description: 'update consent true' })
-  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
-  @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
-  @Post('consent')
-  @UseGuards(IdPGuard)
-  async setConsent(@GetUser() user: User): Promise<void> {
-    return this.userService.setConsent(user);
-  }
-
-  @ApiOperation({
-    summary: 'get user info',
-    description: 'get user info',
+    summary: 'get user info from IdP',
+    description: 'get user info from IdP',
   })
   @ApiOkResponse({ type: UserInfoRes, description: 'Return user info' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
@@ -147,39 +143,115 @@ export class UserController {
   }
 
   @ApiOperation({
-    summary: 'get bbunline people',
-    description: 'get users with the same last four digits of their student ID',
+    summary: '유저의 뻔라인 조회',
+    description:
+      'get users with the same last four digits of their student ID(including the user himself)',
   })
-  @ApiOkResponse({ description: 'Return users info' })
+  @ApiOkResponse({ type: BbunUserResDto, description: 'Return users info' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
   @Get('bbunline')
   @UseGuards(IdPGuard)
   async findBbunUserWithStudentNumber(
     @GetUser() user: UserInfo,
-  ): Promise<User[]> {
-    return this.userService.findUserByMatchingSN(user.studentNumber);
+  ): Promise<BbunUserResListDto> {
+    return {
+      list: await this.userService.findUserByMatchingSN(user.studentNumber),
+    };
   }
 
   @ApiOperation({
-    summary: 'upload profileImage',
+    summary: '테스트용 유저 생성',
+    description: 'make test user with selecting name, ',
+  })
+  @ApiOkResponse({
+    type: BbunUserResDto,
+    description: 'Return users info that we made',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
+  @Post('test')
+  @UseGuards(IdPGuard)
+  async createTempUser(
+    @Body() createTempUserDto: CreateTempUserDto,
+  ): Promise<BbunUserResDto> {
+    return await this.userService.createTempUser(createTempUserDto);
+  }
+
+  @ApiOperation({
+    summary: '유저의 선택정보와 동의 여부 업데이트',
+    description:
+      'update selection information and registration state(all information except data from IdP)',
+  })
+  @ApiOkResponse({ description: 'update user info and return it' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
+  @Patch('profile')
+  @UseGuards(IdPGuard)
+  async updateUserInfo(
+    @GetUser() user: UserInfo,
+    @Body() selection_info: UpdateUserDto,
+  ): Promise<BbunUserResDto> {
+    return this.userService.updateUserInfo(user.studentNumber, selection_info);
+  }
+
+  @ApiOperation({
+    summary: '유저의 뻔라인스케이트 사용 동의 변경',
+    description: 'update user isBbunRegistered',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        isBbunRegistered: {
+          type: 'boolean',
+          example: true, // Swagger에서 기본적으로 true가 보이도록 설정
+          description: '뻔라인스케이트 사용 동의 여부 (true 또는 false)',
+        },
+      },
+    },
+  })
+  @ApiOkResponse({ description: 'update user isRegistered' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
+  @Patch('profile/register')
+  @UseGuards(IdPGuard)
+  async updateIsBbunRegistered(
+    @GetUser() user: UserInfo,
+    @Body('isBbunRegistered') isBbunRegistered: boolean,
+  ): Promise<UserRegistrationDto> {
+    return await this.userService.updateIsBbunRegistered({
+      studentNumber: user.studentNumber,
+      isBbunRegistered: isBbunRegistered,
+    });
+  }
+
+  @ApiOperation({
+    summary: '프로필 이미지 업로드',
     description: 'upload profileImage to convert with Base64',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    required: true,
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Profile image uploaded successfully',
   })
   @ApiOkResponse({ description: 'upload profileimage complete' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
-  @Post('profile/image')
+  @Patch('profile/image')
   @UseGuards(IdPGuard)
-  @UseInterceptors(
-    FileInterceptor('profileImage', {
-      storage: diskStorage({
-        destination: './uploads', // 임시 저장 폴더
-        filename: (req, file, cb) => {
-          cb(null, `${Date.now()}${extname(file.originalname)}`);
-        },
-      }),
-    }),
-  )
+  @UseInterceptors(FileInterceptor('file'))
   async uploadImage(
     @GetUser() user: UserInfo,
     @UploadedFile() file: Express.Multer.File,
@@ -187,35 +259,48 @@ export class UserController {
     if (!file) {
       throw new NotFoundException("There's no file");
     }
-    await this.userService.uploadProfileImage(user.uuid, file);
+    await this.imageService.uploadProfileImage(user.uuid, file);
     return { message: 'Profile image uploaded successfully' };
   }
 
   @ApiOperation({
-    summary: 'Get profileImage',
-    description: 'Get profileImage to convert with Base64',
+    summary: '프로필 이미지 가져오기(webp & base64 encoding)',
+    description: 'Get profileImage with .webp & base64 encoding string',
   })
   @ApiOkResponse({ description: 'Get profileImage complete' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
   @Get('profile/image')
   @UseGuards(IdPGuard)
-  async getProfileImage(@GetUser() user: UserInfo) {
-    return this.userService.getProfileImage(user.uuid);
+  async getProfileImageWithWebp(@GetUser() user: UserInfo) {
+    return this.imageService.getProfileImageWithWebp(user.uuid);
   }
 
-  // @ApiOperation({
-  //   summary: 'register bbunlineskate',
-  //   description: 'register bbunlineskate with changing isBbunRegistered ',
-  // })
-  // @ApiOkResponse({
-  //   description: 'Return registeration',
-  // })
-  // @ApiUnauthorizedResponse({ description: 'Unauthorized' })
-  // @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
-  // @Post('bbun')
-  // @UseGuards(IdPGuard)
-  // async registerBbun(@GetUser() user: User, @Body() create,): Promise<void> {
-  //   return this.userService.setConsent(user);
-  // }
+  @ApiOperation({
+    summary: '프로필 이미지 가져오기(original)',
+    description: 'Get profileImage with .png/.jpeg/.jpg ',
+  })
+  @ApiOkResponse({ description: 'Profile image retrieved successfully' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
+  @Get('profile/image/original')
+  @UseGuards(IdPGuard)
+  async getProfileImage(@GetUser() user: UserInfo) {
+    return this.imageService.getOriginalProfileImage(user.uuid, 'png');
+  }
+
+  @ApiOperation({
+    summary: '프로필 이미지 삭제',
+    description: 'Delete profile image(change to null)',
+  })
+  @ApiOkResponse({ description: 'Delete profileImage complete' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
+  @Delete('profile/image')
+  @UseGuards(IdPGuard)
+  async deleteProfileImage(
+    @GetUser() user: UserInfo,
+  ): Promise<{ message: string }> {
+    return this.imageService.deleteProfileImage(user.uuid);
+  }
 }

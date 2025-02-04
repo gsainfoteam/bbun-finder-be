@@ -11,8 +11,10 @@ import { User } from '@prisma/client';
 import { InfoteamIdpService } from '@lib/infoteam-idp';
 import { Loggable } from '@lib/logger/decorator/loggable';
 import { CustomConfigService } from '@lib/custom-config';
-import { Express } from 'express';
-import { promises as fs } from 'fs';
+import { UpdateUserDto } from './dto/req/updateUser.dto';
+import { UserRegistrationDto } from './dto/res/userInfoRes.dto';
+import { BbunUserResDto } from './dto/res/bbunUser.dto';
+import { CreateTempUserDto } from './dto/req/createUser.dto';
 @Injectable()
 @Loggable()
 export class UserService {
@@ -28,7 +30,7 @@ export class UserService {
    * so we can assume user must have idp account
    * because the sign up is handled by idp
    *
-   * @returns accessToken, refreshToken and the information that is  the user consent required
+   * @returns accessToken, refreshToken
    */
   async login({ code, type }: LoginDto): Promise<JwtTokenType> {
     if (!code || !type) {
@@ -45,18 +47,8 @@ export class UserService {
       code,
       redirectUri,
     );
-    const userInfo = await this.infoteamIdpService.getUserInfo(
-      tokens.access_token,
-    );
-    const user = await this.userRepository.findUserOrCreate({
-      uuid: userInfo.uuid,
-      name: userInfo.name,
-      email: userInfo.email,
-      studentNumber: userInfo.studentNumber,
-    });
     return {
       ...tokens,
-      consent_required: !user?.consent,
     };
   }
 
@@ -64,22 +56,12 @@ export class UserService {
    * this method is used to refresh the access token.
    * therefore, the user must have a refresh token.
    * @param refreshToken
-   * @returns accessToken, refreshToken and the information that is  the user consent required
+   * @returns accessToken, refreshToken
    */
   async refresh(refreshToken: string): Promise<JwtTokenType> {
     const tokens = await this.infoteamIdpService.refresh(refreshToken);
-    const userData = await this.infoteamIdpService.getUserInfo(
-      tokens.access_token,
-    );
-    const user = await this.userRepository.findUserOrCreate({
-      uuid: userData.uuid,
-      name: userData.name,
-      email: userData.email,
-      studentNumber: userData.studentNumber,
-    });
     return {
       ...tokens,
-      consent_required: !user?.consent,
     };
   }
 
@@ -95,15 +77,6 @@ export class UserService {
   }
 
   /**
-   * this method is used to set the user consent about bbundlineskate service
-   * @param user
-   * @returns void
-   */
-  async setConsent(user: User): Promise<void> {
-    await this.userRepository.setConsent(user);
-  }
-
-  /**
    * this method is used to find the user or create the user
    * @param user
    * @returns user
@@ -114,11 +87,23 @@ export class UserService {
     return this.userRepository.findUserOrCreate(user);
   }
 
-  async findUserByStudentNumber(studentNumber: string): Promise<User> {
-    return this.userRepository.findUserByStudentNumber(studentNumber);
+  //학번으로 정보 찾기
+  async findUserByStudentNumber(
+    studentNumber: string,
+  ): Promise<BbunUserResDto> {
+    const user =
+      await this.userRepository.findUserByStudentNumber(studentNumber);
+
+    return {
+      ...user,
+      profileImage: user.profileImage
+        ? Buffer.from(user.profileImage).toString('base64')
+        : null,
+    };
   }
 
-  async findUserByMatchingSN(studentNumber: string): Promise<User[]> {
+  //유저의 뻔라인 조회
+  async findUserByMatchingSN(studentNumber: string): Promise<BbunUserResDto[]> {
     const users = await this.userRepository.findUserByMatchingSN(studentNumber);
 
     if (users.length === 0) {
@@ -126,42 +111,49 @@ export class UserService {
         'No users found with matching student number',
       );
     }
-    return users;
+    return users.map((user) => ({
+      ...user,
+      profileImage: user.profileImage
+        ? Buffer.from(user.profileImage).toString('base64')
+        : null,
+    }));
   }
 
-  async uploadProfileImage(
-    uuid: string,
-    file: Express.Multer.File,
-  ): Promise<void> {
-    if (!file) {
-      throw new NotFoundException('No file');
-    }
-    const base64Image = await this.converFileToBase64(file);
+  async createTempUser(
+    createTempUser: CreateTempUserDto,
+  ): Promise<BbunUserResDto> {
+    const user = await this.userRepository.createTempUser(createTempUser);
 
-    await this.userRepository.saveProfileImage(uuid, base64Image);
+    return {
+      ...user,
+      profileImage: user.profileImage
+        ? Buffer.from(user.profileImage).toString('base64')
+        : null,
+    };
   }
 
-  //특정 사용자의 프로필 사진 조회
-  async getProfileImage(uuid: string): Promise<string> {
-    const image = await this.userRepository.getProfileImage(uuid);
+  //유저 정보 업데이트
+  async updateUserInfo(
+    studentNumber: string,
+    selection_info: UpdateUserDto,
+  ): Promise<BbunUserResDto> {
+    const user = await this.userRepository.updateUserInfo(
+      studentNumber,
+      selection_info,
+    );
 
-    if (!image) {
-      throw new NotFoundException("There's no profile pictures");
-    }
-
-    return image;
+    return {
+      ...user,
+      profileImage: user.profileImage
+        ? Buffer.from(user.profileImage).toString('base64')
+        : null,
+    };
   }
 
-  //파일을 base64로 변환환
-  private async converFileToBase64(file: Express.Multer.File): Promise<string> {
-    const fileBuffer = await fs.readFile(file.path);
-    return `data:${file.mimetype};base64,${fileBuffer.toString('base64')}`;
+  //등록 상태 변경(isBbunRegistered)
+  async updateIsBbunRegistered(
+    registration: Pick<User, 'studentNumber' | 'isBbunRegistered'>,
+  ): Promise<UserRegistrationDto> {
+    return this.userRepository.updateIsBbunRegistered(registration);
   }
-  // async RegisterBbunUser(
-  //   user: Pick<User, 'uuid'
-  // )
-
-  // async setFcmToken(userUuid: string, fcmToken: setFcmTokenReq) {
-  //   return this.userRepository.setFcmToken(userUuid, fcmToken);
-  // }
 }

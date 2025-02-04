@@ -1,6 +1,5 @@
 import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
-import { AnonymousStrategy } from './guard/anonymous.strategy';
 import { IdPGuard, IdPOptionalGuard } from './guard/idp.guard';
 import { IdPStrategy } from './guard/idp.strategy';
 import { IdPOptionalStrategy } from './guard/idpOptional.strategy';
@@ -11,9 +10,11 @@ import { PrismaModule } from '@lib/prisma';
 import { InfoteamIdpModule } from '@lib/infoteam-idp';
 import { LoggerModule } from '@lib/logger';
 import { CustomConfigModule } from '@lib/custom-config';
+import { ImageModule } from 'src/image/image.module';
 
 @Module({
   imports: [
+    ImageModule,
     HttpModule,
     CustomConfigModule,
     PrismaModule,
@@ -26,7 +27,6 @@ import { CustomConfigModule } from '@lib/custom-config';
     IdPGuard,
     IdPOptionalGuard,
     IdPStrategy,
-    AnonymousStrategy,
     IdPOptionalStrategy,
   ],
   controllers: [UserController],

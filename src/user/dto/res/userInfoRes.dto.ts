@@ -32,3 +32,17 @@ export class UserInfoRes implements UserInfo {
   })
   studentNumber: string;
 }
+
+export class UserRegistrationDto {
+  @ApiProperty({
+    description: 'User studentNumber',
+    example: '20005001',
+  })
+  studentNumber: string;
+
+  @ApiProperty({
+    description: 'User Registration state',
+    example: true,
+  })
+  isBbunRegistered: boolean;
+}

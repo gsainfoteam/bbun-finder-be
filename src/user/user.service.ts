@@ -38,11 +38,9 @@ export class UserService {
       throw new BadRequestException();
     }
     const redirectUri =
-      type === 'flutter'
-        ? this.customConfigService.FLUTTER_REDIRECT_URI
-        : type === 'local'
-          ? this.customConfigService.LOCAL_REDIRECT_URI
-          : this.customConfigService.WEB_REDIRECT_URI;
+      type === 'local'
+        ? this.customConfigService.LOCAL_REDIRECT_URI
+        : this.customConfigService.WEB_REDIRECT_URI;
     const tokens = await this.infoteamIdpService.getAccessToken(
       code,
       redirectUri,

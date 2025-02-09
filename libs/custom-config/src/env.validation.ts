@@ -44,10 +44,6 @@ export class EnvironmentVariables {
 
   @IsString()
   @IsNotEmpty()
-  FLUTTER_REDIRECT_URI: string;
-
-  @IsString()
-  @IsNotEmpty()
   LOCAL_REDIRECT_URI: string;
 
   @IsString()

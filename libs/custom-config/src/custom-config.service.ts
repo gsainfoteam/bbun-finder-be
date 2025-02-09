@@ -50,10 +50,6 @@ export class CustomConfigService {
     return this.getEnvVariable('CLIENT_SECRET');
   }
 
-  get FLUTTER_REDIRECT_URI(): string {
-    return this.getEnvVariable('FLUTTER_REDIRECT_URI');
-  }
-
   get LOCAL_REDIRECT_URI(): string {
     return this.getEnvVariable('LOCAL_REDIRECT_URI');
   }

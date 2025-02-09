@@ -11,6 +11,8 @@ RUN npm install --platform=linuxmusl
 
 COPY . .
 
+RUN npx prisma generate
+
 RUN npm run build
 
 #Step 2: Copy the build from 'builder' to 'runner'
@@ -24,6 +26,8 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone &
   apk add build-base libheif vips-dev vips -q
 
 COPY --from=builder /app ./
+
+RUN npm install -D prisma --platform=linuxmusl
 
 EXPOSE 3000
 

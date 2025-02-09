@@ -42,6 +42,10 @@ export class CustomConfigService {
     return this.getEnvVariable('API_URL');
   }
 
+  get API_VERSION(): string {
+    return this.getEnvVariable('API_VERSION');
+  }
+
   get CLIENT_ID(): string {
     return this.getEnvVariable('CLIENT_ID');
   }
@@ -56,5 +60,29 @@ export class CustomConfigService {
 
   get WEB_REDIRECT_URI(): string {
     return this.getEnvVariable('WEB_REDIRECT_URI');
+  }
+
+  get EMAIL_USER(): string {
+    return this.getEnvVariable('EMAIL_USER');
+  }
+
+  get EMAIL_PORT(): string {
+    return this.getEnvVariable('EMAIL_PORT');
+  }
+
+  get EMAIL_HOST(): string {
+    return this.getEnvVariable('EMAIL_HOST');
+  }
+
+  get EMAIL_ACCESS_URL(): string {
+    return this.getEnvVariable('EMAIL_ACCESS_URL');
+  }
+
+  get EMAIL_SERVICE_CLIENT(): string {
+    return this.getEnvVariable('EMAIL_SERVICE_CLIENT');
+  }
+
+  get EMAIL_PRIVATE_KEY(): string {
+    return this.getEnvVariable('EMAIL_PRIVATE_KEY');
   }
 }

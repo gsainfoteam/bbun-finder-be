@@ -203,6 +203,31 @@ export class UserService {
     };
   }
 
+  //서비스 회원가입
+  async registerTempUser(
+    studentNumber: string,
+    selection_info: registerUserDto,
+  ): Promise<BbunUserResDto> {
+    const user = await this.userRepository.registerUser(
+      studentNumber,
+      selection_info,
+    );
+
+    //뻔라인 조회 및 이메일 전송을 위해 email list 조회
+    const bbunlineEmails =
+      await this.userRepository.findUserToSendEmail(studentNumber);
+    const emailList = bbunlineEmails.map((user) => user.email);
+
+    await this.emailService.sendEmailBbunline(emailList);
+
+    return {
+      ...user,
+      profileImage: user.profileImage
+        ? Buffer.from(user.profileImage).toString('base64')
+        : null,
+    };
+  }
+
   //등록 상태 변경(isBbunRegistered)
   async updateIsBbunRegistered(
     registration: Pick<User, 'studentNumber' | 'isBbunRegistered'>,

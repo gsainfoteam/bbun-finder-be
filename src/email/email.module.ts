@@ -3,7 +3,7 @@ import { EmailService } from './email.service';
 import { CustomConfigModule, CustomConfigService } from '@lib/custom-config';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
-import path from 'path';
+import * as path from 'path';
 
 @Module({
   imports: [
@@ -28,14 +28,14 @@ import path from 'path';
           },
         },
         defaults: {
-          from: `"BbunlineSkate Service"<${customConfigService.EMAIL_USER}>`, //from에 아무것도 없으면 전달되는 값
+          from: `"BbunlineSkate Service" <${customConfigService.EMAIL_USER}>`, //from에 아무것도 없으면 전달되는 값
         },
         tls: {
           rejectUnauthorized: false,
         },
 
         template: {
-          dir: path.join(__dirname, 'templates'),
+          dir: path.resolve(__dirname, '..', 'email', 'templates'),
           adapter: new HandlebarsAdapter(),
           options: {
             strict: true,

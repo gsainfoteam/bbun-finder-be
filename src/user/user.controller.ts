@@ -254,7 +254,7 @@ export class UserController {
   //   if (!file) {
   //     throw new NotFoundException("There's no file");
   //   }
-  //   await await this.imageService.uploadProfileImage(user.uuid, file);
+  //   await this.imageService.uploadProfileImage(user.uuid, file);
   //   return { message: 'Profile image uploaded successfully' };
   // }
 
@@ -292,7 +292,7 @@ export class UserController {
     if (!file) {
       throw new NotFoundException("There's no file");
     }
-    await await this.imageService.uploadProfileImage(user.uuid, file);
+    await this.imageService.uploadProfileImage(user.uuid, file);
     return { message: 'Profile image uploaded successfully' };
   }
 
@@ -345,18 +345,6 @@ export class UserController {
     summary: '학번으로 유저 조회(test용)',
     description: 'get bbunlineskate user info ',
   })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        studentNumber: {
-          type: 'string',
-          example: '20215036', // Swagger에서 기본적으로 true가 보이도록 설정
-          description: '뻔라인스케이트 사용 동의 여부 (true 또는 false)',
-        },
-      },
-    },
-  })
   @ApiOkResponse({ type: BbunUserResDto, description: 'Return user info' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
@@ -384,6 +372,26 @@ export class UserController {
     @Body() createTempUserDto: CreateTempUserDto,
   ): Promise<BbunUserResDto> {
     return await this.userService.createTempUser(createTempUserDto);
+  }
+
+  @ApiOperation({
+    summary: '뻔라인스케이트 회원가입(test 용)',
+    description:
+      'register user with selection informationwith consent for personal data provision (필수 정보는 로그인할 때 idp에서 받아와서 선택정보랑 동의 여부만 true로 바꿈) (test)',
+  })
+  @ApiOkResponse({
+    type: BbunUserResDto,
+    description: 'register Temp user is completed, and send email to bbunline',
+  })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
+  @Patch('test/register:studentNumber')
+  @UseGuards(IdPGuard)
+  async registerTempUser(
+    @Param('studentNumber') studentNumber: string,
+    @Body() selection_info: registerUserDto,
+  ): Promise<BbunUserResDto> {
+    return this.userService.registerTempUser(studentNumber, selection_info);
   }
 
   @ApiOperation({

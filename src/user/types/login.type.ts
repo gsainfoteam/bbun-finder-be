@@ -1,2 +1,2 @@
-export const loginEnum = ['web', 'local', 'flutter'];
+export const loginEnum = ['web', 'local'];
 export type LoginType = (typeof loginEnum)[number];

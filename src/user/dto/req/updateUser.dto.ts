@@ -1,16 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class UpdateUserDto {
-  @ApiProperty({
-    description: 'User Registration state',
-    example: true,
-    required: false,
-  })
-  @IsOptional()
-  @IsBoolean()
-  isBbunRegistered?: boolean;
-
   @ApiProperty({
     description: 'User department',
     example: '기초교육학부',
@@ -35,7 +26,6 @@ export class UpdateUserDto {
     required: false,
   })
   @IsOptional()
-  @MaxLength(300, { message: '자기소개는 최대 300자까지 입력할 수 있습니다.' })
   @IsString()
   insta_ID?: string;
 
@@ -46,16 +36,7 @@ export class UpdateUserDto {
     required: false,
   })
   @IsOptional()
+  @MaxLength(300, { message: '자기소개는 최대 300자까지 입력할 수 있습니다.' })
   @IsString()
   description?: string;
-}
-
-export class IsBbunRegisteredDto {
-  @ApiProperty({
-    description: 'User Registration state',
-    example: true,
-    required: true,
-  })
-  @IsBoolean()
-  isBbunRegistered: boolean;
 }

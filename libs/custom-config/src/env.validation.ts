@@ -44,11 +44,39 @@ export class EnvironmentVariables {
 
   @IsString()
   @IsNotEmpty()
+  API_VERSION: string;
+
+  @IsString()
+  @IsNotEmpty()
   LOCAL_REDIRECT_URI: string;
 
   @IsString()
   @IsNotEmpty()
   WEB_REDIRECT_URI: string;
+
+  @IsString()
+  @IsNotEmpty()
+  EMAIL_USER: string;
+
+  @IsString()
+  @IsNotEmpty()
+  EMAIL_PORT: string;
+
+  @IsString()
+  @IsNotEmpty()
+  EMAIL_HOST: string;
+
+  @IsString()
+  @IsNotEmpty()
+  EMAIL_ACCESS_URL: string;
+
+  @IsString()
+  @IsNotEmpty()
+  EMAIL_SERVICE_CLIENT: string;
+
+  @IsString()
+  @IsNotEmpty()
+  EMAIL_PRIVATE_KEY: string;
 }
 
 export type EnvironmentVariableKeys = keyof EnvironmentVariables;

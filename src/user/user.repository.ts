@@ -11,19 +11,13 @@ import { PrismaService } from '@lib/prisma';
 import { Loggable } from '@lib/logger/decorator/loggable';
 import { UpdateUserDto } from './dto/req/updateUser.dto';
 import { UserRegistrationDto } from './dto/res/userInfoRes.dto';
-import { CreateTempUserDto } from './dto/req/createUser.dto';
+import { CreateTempUserDto, registerUserDto } from './dto/req/createUser.dto';
 
 @Injectable()
 @Loggable()
 export class UserRepository {
   private readonly logger = new Logger(UserRepository.name);
   constructor(private readonly prismaService: PrismaService) {}
-
-  async findUserByUuid({ uuid }: Pick<User, 'uuid'>) {
-    return this.prismaService.user.findUnique({
-      where: { uuid },
-    });
-  }
 
   //User를 찾고 없으면 생성(기본값)-IDP 로그인 시 이루어지는 작업
   async findUserOrCreate({
@@ -70,6 +64,89 @@ export class UserRepository {
       });
   }
 
+  //서비스 회원가입
+  async registerUser(
+    studentNumber: string,
+    updateData: registerUserDto,
+  ): Promise<User> {
+    return await this.prismaService.user
+      .update({
+        where: { studentNumber },
+        data: { ...updateData, isBbunRegistered: true },
+      })
+      .catch((err) => {
+        if (err instanceof PrismaClientKnownRequestError) {
+          if (err.code === 'P2025') {
+            this.logger.error('updateUserInfo Error');
+            this.logger.debug(err);
+            throw new NotFoundException(
+              `User with studentNumber ${studentNumber} not found`,
+            );
+          }
+          this.logger.error('updateUserInfo Error');
+          this.logger.debug(err);
+          throw new InternalServerErrorException('Database Error');
+        }
+        this.logger.error('updateUserInfo Error');
+        this.logger.debug(err);
+        throw new InternalServerErrorException('Unknown Error');
+      });
+  }
+
+  //서비스 회원탈퇴
+  async deleteUser({
+    studentNumber,
+  }: Pick<User, 'studentNumber'>): Promise<UserRegistrationDto> {
+    const user = await this.prismaService.user
+      .update({
+        where: { studentNumber, deletedAt: null },
+        data: { isBbunRegistered: false, deletedAt: new Date() },
+      })
+      .catch((err) => {
+        if (err instanceof PrismaClientKnownRequestError) {
+          if (err.code === 'P2025') {
+            this.logger.error('deleteAccount Error');
+            this.logger.debug('user not found');
+            throw new NotFoundException();
+          }
+          this.logger.error('deleteAccount Error');
+          this.logger.debug(err);
+          throw new InternalServerErrorException('Database Error');
+        }
+        this.logger.error('deleteAccount Error');
+        this.logger.debug(err);
+        throw new InternalServerErrorException('Unknown Error');
+      });
+
+    return {
+      studentNumber: user.studentNumber,
+      isBbunRegistered: user.isBbunRegistered,
+    };
+  }
+
+  //uuid로 학생 찾기
+  async findUserByUuid({ uuid }: Pick<User, 'uuid'>): Promise<User> {
+    return this.prismaService.user
+      .findUniqueOrThrow({
+        where: { uuid },
+      })
+      .catch((err) => {
+        if (err instanceof PrismaClientKnownRequestError) {
+          if (err.code === 'P2025') {
+            this.logger.error('findUserByUuid Error');
+            this.logger.debug('user not found');
+            throw new NotFoundException();
+          }
+          this.logger.error('findUserByUuid Error');
+          this.logger.debug(err);
+          throw new InternalServerErrorException('Database Error');
+        }
+        this.logger.error('findUserByUuid Error');
+        this.logger.debug(err);
+        throw new InternalServerErrorException('Unknown Error');
+      });
+  }
+
   //학번으로 학생 찾기
   async findUserByStudentNumber(studentNumber: string): Promise<User> {
     return this.prismaService.user
@@ -93,35 +170,10 @@ export class UserRepository {
       });
   }
 
-  //테스트용 데이터 생성(실제 데이터 아님)
-  async createUser({
-    name,
-    email,
-    studentNumber,
-  }: CreateTempUserDto): Promise<User> {
-    return this.prismaService.user
-      .create({
-        data: {
-          uuid: uuid(),
-          name,
-          email,
-          studentNumber,
-        },
-      })
-      .catch((err) => {
-        if (err instanceof PrismaClientKnownRequestError) {
-          this.logger.error(err.message);
-          this.logger.debug(err);
-          throw new InternalServerErrorException('Database Error');
-        }
-        this.logger.error('findUserByMatchingSN Error');
-        this.logger.debug(err);
-        throw new InternalServerErrorException('Unknown Error');
-      });
-  }
-
-  //유저의 뻔라인 조회
-  async findUserByMatchingSN(studentNumber: string): Promise<User[]> {
+  //유저의 등록 후 이메일 보낼 사람 조회
+  async findUserToSendEmail(
+    studentNumber: string,
+  ): Promise<Pick<User, 'email'>[]> {
     const suffix = studentNumber.slice(-4);
     return this.prismaService.user
       .findMany({
@@ -130,14 +182,18 @@ export class UserRepository {
             endsWith: suffix,
           },
           isBbunRegistered: true, //Bbunlineskate registrant only
-          // NOT: {
-          //   studentNumber: studentNumber, //excluding the user himself
-          // },
+          NOT: {
+            studentNumber: studentNumber, //excluding the user himself
+          },
+        },
+        select: { email: true },
+        orderBy: {
+          createdAt: 'asc',
         },
       })
       .catch((err) => {
         if (err instanceof PrismaClientKnownRequestError) {
-          this.logger.error(err.message);
+          this.logger.error('findUserByMatchingSN Error');
           this.logger.debug(err);
           throw new InternalServerErrorException('Database Error');
         }
@@ -147,30 +203,40 @@ export class UserRepository {
       });
   }
 
-  // async deleteUser({uuid}): Promise<any>{
-  //   reutnr this.prismaService.user.delete({
-  //     where: {uuid}
-  //   })
-  // }
-
-  //이름만 정해서 만드는 테스트용 데이터 생성
-  async createTempUser({ name }: Pick<User, 'name'>): Promise<User> {
+  //유저의 뻔라인 조회(자기자신을 포함할지 그러지 않을지 정할 수 있음)
+  async findUserByMatchingSN(
+    student_Number: string,
+    includeSelf: boolean,
+  ): Promise<User[]> {
+    const suffix = student_Number.slice(-4);
     return this.prismaService.user
-      .create({
-        data: {
-          uuid: uuid(),
-          name,
-          email: 'example@gm.gist.ac.kr',
-          studentNumber: '20005000',
+      .findMany({
+        where: {
+          studentNumber: {
+            endsWith: suffix,
+          },
+          isBbunRegistered: true, //Bbunlineskate registrant only
+          ...(includeSelf
+            ? {}
+            : {
+                NOT: {
+                  studentNumber: student_Number, //excluding the user himself
+                },
+              }),
+        },
+        orderBy: {
+          createdAt: 'asc',
         },
       })
       .catch((err) => {
         if (err instanceof PrismaClientKnownRequestError) {
-          this.logger.error(err.message);
-          throw new InternalServerErrorException();
+          this.logger.error('findUserByMatchingSN Error');
+          this.logger.debug(err);
+          throw new InternalServerErrorException('Database Error');
         }
-        this.logger.error(err);
-        throw new InternalServerErrorException();
+        this.logger.error('findUserByMatchingSN Error');
+        this.logger.debug(err);
+        throw new InternalServerErrorException('Unknown Error');
       });
   }
 
@@ -187,17 +253,17 @@ export class UserRepository {
       .catch((err) => {
         if (err instanceof PrismaClientKnownRequestError) {
           if (err.code === 'P2025') {
-            this.logger.error('updateRegistrationStatus Error');
+            this.logger.error('updateUserInfo Error');
             this.logger.debug(err);
             throw new NotFoundException(
               `User with studentNumber ${studentNumber} not found`,
             );
           }
-          this.logger.error('updateRegistrationStatus Error');
+          this.logger.error('updateUserInfo Error');
           this.logger.debug(err);
           throw new InternalServerErrorException('Database Error');
         }
-        this.logger.error('updateRegistrationStatus Error');
+        this.logger.error('updateUserInfo Error');
         this.logger.debug(err);
         throw new InternalServerErrorException('Unknown Error');
       });
@@ -218,11 +284,11 @@ export class UserRepository {
       })
       .catch((err) => {
         if (err instanceof PrismaClientKnownRequestError) {
-          this.logger.error('updateRegistrationStatus Error');
+          this.logger.error('updateIsBbunRegistered Error');
           this.logger.debug(err);
           throw new InternalServerErrorException('Database Error');
         }
-        this.logger.error('updateRegistrationStatus Error');
+        this.logger.error('updateIsBbunRegistered Error');
         this.logger.debug(err);
         throw new InternalServerErrorException('Unknown Error');
       });
@@ -231,5 +297,33 @@ export class UserRepository {
       studentNumber: user.studentNumber,
       isBbunRegistered: user.isBbunRegistered,
     };
+  }
+
+  //테스트용 데이터 생성(실제 데이터 아님)
+  async createTempUser({
+    name,
+    email,
+    studentNumber,
+  }: CreateTempUserDto): Promise<User> {
+    return this.prismaService.user
+      .create({
+        data: {
+          uuid: uuid(),
+          name,
+          email,
+          studentNumber,
+          insta_ID: 'test',
+        },
+      })
+      .catch((err) => {
+        if (err instanceof PrismaClientKnownRequestError) {
+          this.logger.error('createTempUser Error');
+          this.logger.debug(err);
+          throw new InternalServerErrorException('Database Error');
+        }
+        this.logger.error('findUserByMatchingSN Error');
+        this.logger.debug(err);
+        throw new InternalServerErrorException('Unknown Error');
+      });
   }
 }

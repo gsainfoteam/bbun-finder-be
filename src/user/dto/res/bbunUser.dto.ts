@@ -27,15 +27,21 @@ export class BbunUserResDto {
 
   @ApiProperty({
     description: 'created time',
-    example: '20212345',
+    example: '2024-02-20T09:00:00.000Z',
   })
   createdAt: Date;
 
   @ApiProperty({
     description: 'updated time',
-    example: '20212345',
+    example: '2024-02-20T09:00:00.000Z',
   })
   updatedAt: Date;
+
+  @ApiProperty({
+    description: 'deleted time',
+    example: '2024-02-20T09:00:00.000Z',
+  })
+  deletedAt: Date | null;
 
   @ApiProperty({
     description: 'user registration',

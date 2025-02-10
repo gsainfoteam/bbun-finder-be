@@ -6,12 +6,13 @@ CREATE TABLE "user" (
     "email" TEXT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMP(3),
     "isBbunRegistered" BOOLEAN NOT NULL DEFAULT false,
-    "profileImage" TEXT,
     "department" TEXT,
     "MBTI" TEXT,
     "insta_ID" TEXT,
-    "description" TEXT DEFAULT '(추가 한 줄 소개)',
+    "description" TEXT,
+    "profileImage" BYTEA,
 
     CONSTRAINT "user_pkey" PRIMARY KEY ("uuid")
 );

@@ -54,7 +54,7 @@ export class ImageService {
   }
 
   async deleteProfileImage(uuid: string): Promise<{ message: string }> {
-    return this.deleteProfileImage(uuid);
+    return this.imageRepository.deleteProfileImage(uuid);
   }
 
   /**

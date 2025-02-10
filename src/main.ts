@@ -1,20 +1,25 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { existsSync, mkdirSync } from 'fs';
-import { ConfigService } from '@nestjs/config';
+import { CustomConfigService } from '@lib/custom-config';
+import expressBasicAuth from 'express-basic-auth';
 
 async function bootstrap() {
-  //사진 임시 저장 폴더 없으면 생성
-  const uploadDir = './uploads';
-  if (!existsSync(uploadDir)) {
-    mkdirSync(uploadDir);
-    console.log('uploads folder is generated');
-  }
   const app = await NestFactory.create(AppModule);
 
   // get configurations from .env
-  const configService = app.get(ConfigService);
+  const customConfigService = app.get(CustomConfigService);
+
+  app.use(
+    ['/api'],
+    expressBasicAuth({
+      challenge: true,
+      users: {
+        [customConfigService.SWAGGER_USER]:
+          customConfigService.SWAGGER_PASSWORD,
+      },
+    }),
+  );
 
   // set CORS config
   const whitelist = [
@@ -40,7 +45,7 @@ async function bootstrap() {
   const config = new DocumentBuilder()
     .setTitle('BBun Finder API')
     .setDescription('API Document for Bbun backend!')
-    .setVersion(configService.getOrThrow('API_VERSION'))
+    .setVersion(customConfigService.API_VERSION)
     .addTag('Bbunlineskates')
     .addOAuth2(
       {
@@ -50,8 +55,8 @@ async function bootstrap() {
         bearerFormat: 'token',
         flows: {
           authorizationCode: {
-            authorizationUrl: configService.getOrThrow('SWAGGER_AUTH_URL'),
-            tokenUrl: configService.getOrThrow('SWAGGER_TOKEN_URL'),
+            authorizationUrl: customConfigService.SWAGGER_AUTH_URL,
+            tokenUrl: customConfigService.SWAGGER_TOKEN_URL,
             scopes: {
               openid: 'openid',
               email: 'email',
@@ -68,7 +73,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document, {
     swaggerOptions: {
-      oauth2RedirectUrl: `${configService.getOrThrow('API_URL')}/api/oauth2-redirect.html`,
+      oauth2RedirectUrl: `${customConfigService.API_URL}/api/oauth2-redirect.html`,
       displayRequestDuration: true,
     },
   });

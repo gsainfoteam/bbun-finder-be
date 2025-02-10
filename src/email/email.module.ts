@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { EmailService } from './email.service';
 import { CustomConfigModule, CustomConfigService } from '@lib/custom-config';
 import { MailerModule } from '@nestjs-modules/mailer';
+import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
+import path from 'path';
 
 @Module({
   imports: [
@@ -30,6 +32,14 @@ import { MailerModule } from '@nestjs-modules/mailer';
         },
         tls: {
           rejectUnauthorized: false,
+        },
+
+        template: {
+          dir: path.join(__dirname, 'templates'),
+          adapter: new HandlebarsAdapter(),
+          options: {
+            strict: true,
+          },
         },
       }),
     }),

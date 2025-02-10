@@ -15,6 +15,7 @@ import {
   NotFoundException,
   Patch,
   Delete,
+  Param,
 } from '@nestjs/common';
 import { LoginDto } from './dto/req/login.dto';
 import { Request, Response, Express } from 'express';
@@ -359,10 +360,10 @@ export class UserController {
   @ApiOkResponse({ type: BbunUserResDto, description: 'Return user info' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
-  @Get('')
+  @Get(':studentNumber')
   @UseGuards(IdPGuard)
   async getUserInfoByStudentNumber(
-    @Body() studentNumber: string,
+    @Param('studentNumber') studentNumber: string,
   ): Promise<BbunUserResDto> {
     return await this.userService.findUserByStudentNumber(studentNumber);
   }

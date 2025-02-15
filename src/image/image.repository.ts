@@ -21,10 +21,26 @@ export class ImageRepository {
    * @param imageBuffer 이미지 버퍼 데이터
    */
   async saveProfileImage(userUuid: string, imageBuffer: Buffer): Promise<User> {
-    return await this.prismaService.user.update({
-      where: { uuid: userUuid },
-      data: { profileImage: imageBuffer },
-    });
+    return await this.prismaService.user
+      .update({
+        where: { uuid: userUuid },
+        data: { profileImage: imageBuffer },
+      })
+      .catch((err) => {
+        if (err instanceof PrismaClientKnownRequestError) {
+          if (err.code === 'P2025') {
+            this.logger.error('saveProfileImage Error');
+            this.logger.debug(err);
+            throw new NotFoundException('user not found');
+          }
+          this.logger.error('saveProfileImage Error');
+          this.logger.debug(err);
+          throw new InternalServerErrorException('Database Error');
+        }
+        this.logger.error('saveProfileImage Error');
+        this.logger.debug(err);
+        throw new InternalServerErrorException('Unknown Error');
+      });
   }
 
   /**
@@ -40,12 +56,16 @@ export class ImageRepository {
       })
       .catch((err) => {
         if (err instanceof PrismaClientKnownRequestError) {
-          if (err.code === 'P2025')
-            this.logger.error('updateRegistrationStatus Error');
+          if (err.code === 'P2025') {
+            this.logger.error('getProfileImage Error');
+            this.logger.debug(err);
+            throw new NotFoundException('user not found');
+          }
+          this.logger.error('getProfileImage Error');
           this.logger.debug(err);
           throw new InternalServerErrorException('Database Error');
         }
-        this.logger.error('updateRegistrationStatus Error');
+        this.logger.error('getProfileImage Error');
         this.logger.debug(err);
         throw new InternalServerErrorException('Unknown Error');
       });
@@ -57,10 +77,26 @@ export class ImageRepository {
   }
 
   async deleteProfileImage(uuid: string): Promise<{ message: string }> {
-    await this.prismaService.user.update({
-      where: { uuid },
-      data: { profileImage: null },
-    });
+    await this.prismaService.user
+      .update({
+        where: { uuid },
+        data: { profileImage: null },
+      })
+      .catch((err) => {
+        if (err instanceof PrismaClientKnownRequestError) {
+          if (err.code === 'P2025') {
+            this.logger.error('deleteProfileImage Error');
+            this.logger.debug(err);
+            throw new NotFoundException('user not found');
+          }
+          this.logger.error('deleteProfileImage Error');
+          this.logger.debug(err);
+          throw new InternalServerErrorException('Database Error');
+        }
+        this.logger.error('deleteProfileImage Error');
+        this.logger.debug(err);
+        throw new InternalServerErrorException('Unknown Error');
+      });
     return { message: 'Profile image deleted' };
   }
 }

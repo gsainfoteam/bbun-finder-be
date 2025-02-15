@@ -14,18 +14,19 @@ datasource db {
 }
 
 model User {
-  uuid String @id @db.Uuid
-  name String           //이름
-  studentNumber String @unique //학번
-  email String @unique  //이메일
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @default(now()) @map("updated_at") @updatedAt
+  uuid String           @id @db.Uuid
+  name String                    //이름
+  studentNumber String  @unique  //학번
+  email String          @unique  //이메일
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @default(now()) @map("updated_at") @updatedAt
+  deletedAt DateTime?   @map("deleted_at") 
 
-  isBbunRegistered Boolean @default(false) //기본값 false
+  isBbunRegistered Boolean @default(false)
   department String?    //학과
   MBTI String?          //MBTI
   insta_ID String?      //인스타 아이디
-  description String?   @default("(추가 한 줄 소개)")//짧은 소개
+  description String?   //짧은 소개
   
   profileImage Bytes?  //프로필 이미지(webp 형식으로 압축 및 저장)
   

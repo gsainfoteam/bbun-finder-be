@@ -11,9 +11,11 @@ import { InfoteamIdpModule } from '@lib/infoteam-idp';
 import { LoggerModule } from '@lib/logger';
 import { CustomConfigModule } from '@lib/custom-config';
 import { ImageModule } from 'src/image/image.module';
+import { EmailModule } from 'src/email/email.module';
 
 @Module({
   imports: [
+    EmailModule,
     ImageModule,
     HttpModule,
     CustomConfigModule,

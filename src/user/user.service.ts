@@ -14,13 +14,15 @@ import { CustomConfigService } from '@lib/custom-config';
 import { UpdateUserDto } from './dto/req/updateUser.dto';
 import { UserRegistrationDto } from './dto/res/userInfoRes.dto';
 import { BbunUserResDto } from './dto/res/bbunUser.dto';
-import { CreateTempUserDto } from './dto/req/createUser.dto';
+import { CreateTempUserDto, registerUserDto } from './dto/req/createUser.dto';
+import { EmailService } from 'src/email/email.service';
 @Injectable()
 @Loggable()
 export class UserService {
   private readonly logger = new Logger(UserService.name);
   constructor(
     private readonly customConfigService: CustomConfigService,
+    private readonly emailService: EmailService,
     private readonly infoteamIdpService: InfoteamIdpService,
     private readonly userRepository: UserRepository,
   ) {}
@@ -85,6 +87,93 @@ export class UserService {
     return this.userRepository.findUserOrCreate(user);
   }
 
+  //서비스 회원가입
+  async registerUser(
+    sendUser: Pick<User, 'name' | 'email' | 'studentNumber'>,
+    selection_info: registerUserDto,
+  ): Promise<BbunUserResDto> {
+    const user = await this.userRepository.registerUser(
+      sendUser.studentNumber,
+      selection_info,
+    );
+
+    //뻔라인 조회 및 이메일 전송을 위해 email list 조회
+    const bbunlineEmails = await this.userRepository.findUserToSendEmail(
+      sendUser.studentNumber,
+    );
+    const emailList = bbunlineEmails.map((user) => user.email);
+
+    await this.emailService.sendEmailBbunline(emailList);
+
+    return {
+      ...user,
+      profileImage: user.profileImage
+        ? Buffer.from(user.profileImage).toString('base64')
+        : null,
+    };
+  }
+
+  //서비스 회원탈퇴
+  async deleteUser(
+    user: Pick<User, 'studentNumber'>,
+  ): Promise<UserRegistrationDto> {
+    return this.userRepository.deleteUser(user);
+  }
+
+  //자기 자신의 정보 조회
+  async getUserInfoBbun(sendUser: Pick<User, 'uuid'>): Promise<BbunUserResDto> {
+    const user = await this.userRepository.findUserByUuid(sendUser);
+
+    return {
+      ...user,
+      profileImage: user.profileImage
+        ? Buffer.from(user.profileImage).toString('base64')
+        : null,
+    };
+  }
+
+  //유저의 뻔라인 조회
+  async findUserByMatchingSN(studentNumber: string): Promise<BbunUserResDto[]> {
+    const users = await this.userRepository.findUserByMatchingSN(
+      studentNumber,
+      true,
+    );
+
+    if (users.length === 0) {
+      throw new NotFoundException(
+        'No users found with matching student number',
+      );
+    }
+    return users.map((user) => ({
+      ...user,
+      profileImage: user.profileImage
+        ? Buffer.from(user.profileImage).toString('base64')
+        : null,
+    }));
+  }
+
+  //유저 정보 업데이트
+  async updateUserInfo(
+    studentNumber: string,
+    selection_info: UpdateUserDto,
+  ): Promise<BbunUserResDto> {
+    const user = await this.userRepository.updateUserInfo(
+      studentNumber,
+      selection_info,
+    );
+
+    return {
+      ...user,
+      profileImage: user.profileImage
+        ? Buffer.from(user.profileImage).toString('base64')
+        : null,
+    };
+  }
+
+  /*
+  test용 api
+  */
+
   //학번으로 정보 찾기
   async findUserByStudentNumber(
     studentNumber: string,
@@ -100,23 +189,7 @@ export class UserService {
     };
   }
 
-  //유저의 뻔라인 조회
-  async findUserByMatchingSN(studentNumber: string): Promise<BbunUserResDto[]> {
-    const users = await this.userRepository.findUserByMatchingSN(studentNumber);
-
-    if (users.length === 0) {
-      throw new NotFoundException(
-        'No users found with matching student number',
-      );
-    }
-    return users.map((user) => ({
-      ...user,
-      profileImage: user.profileImage
-        ? Buffer.from(user.profileImage).toString('base64')
-        : null,
-    }));
-  }
-
+  //테스트용 계정 생성
   async createTempUser(
     createTempUser: CreateTempUserDto,
   ): Promise<BbunUserResDto> {
@@ -130,15 +203,22 @@ export class UserService {
     };
   }
 
-  //유저 정보 업데이트
-  async updateUserInfo(
+  //서비스 회원가입
+  async registerTempUser(
     studentNumber: string,
-    selection_info: UpdateUserDto,
+    selection_info: registerUserDto,
   ): Promise<BbunUserResDto> {
-    const user = await this.userRepository.updateUserInfo(
+    const user = await this.userRepository.registerUser(
       studentNumber,
       selection_info,
     );
+
+    //뻔라인 조회 및 이메일 전송을 위해 email list 조회
+    const bbunlineEmails =
+      await this.userRepository.findUserToSendEmail(studentNumber);
+    const emailList = bbunlineEmails.map((user) => user.email);
+
+    await this.emailService.sendEmailBbunline(emailList);
 
     return {
       ...user,

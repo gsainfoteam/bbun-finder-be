@@ -1,32 +1,84 @@
 <html>
-  <head>
-    <title>[BbunlineSkate] 당신의 뻔라인이 등록되었습니다!</title>
-  </head>
-  <body
-    style='font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 40px 0;'
-  >
-    <table width='100%' border='0' cellspacing='0' cellpadding='0'>
-      <tr>
-        <td align='center'>
-          <table
-            width='800px'
-            style='background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);'
-          >
-            <tr>
-              <td style='text-align: center;'>
-                <h2 style='color: #333; font-size: 28px;'>당신의 뻔선/뻔후가
-                  <br />
-                  서비스에 등록하였습니다.</h2>
-                <p style='color: #666; font-size: 18px; line-height: 1.5;'>
-                  당신의 뻔라인을
-                  <a href='https://example.com'>여기서</a>
-                  확인해보세요!
-                </p>
-              </td>
-            </tr>
-          </table>
+<head>
+    <title>뻔라인스케이팅</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #FDFDAA;
+            margin: 0;
+            padding: 40px 0;
+        }
+
+        table {
+            width: 100%;
+            border: 0;
+            cellspacing: 0;
+            cellpadding: 0;
+        }
+
+        .email-container {
+            max-width: 800px;
+            width: 100%;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .button {
+            display: inline-block;
+            background-color: #FAE366;
+            color: #333;
+            font-size: 16px;
+            font-weight: bold;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+        }
+
+        @media screen and (max-width: 600px) {
+            .email-container {
+                padding: 20px;
+            }
+
+            h2 {
+                font-size: 24px;
+            }
+
+            p {
+                font-size: 16px;
+            }
+
+            .button {
+                font-size: 16px;
+                padding: 10px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+<table>
+    <tr>
+        <td align="center">
+            <table class="email-container">
+                <tr>
+                    <td style="text-align: center;">
+                        <h2 style="color: #333; font-size: 24px;">
+                            (두근두근) <br />
+                            당신의 뻔선/뻔후가 서비스에 가입했어요!
+                        </h2>
+                        <p style="color: #666; font-size: 16px; line-height: 1.5;">
+                            지금 접속 후 확인해보세요
+                        </p>
+                        <a href="https://example.com" class="button">
+                            뻔라인스케이팅 바로가기
+                        </a>
+                    </td>
+                </tr>
+            </table>
         </td>
-      </tr>
-    </table>
-  </body>
+    </tr>
+</table>
+</body>
 </html>

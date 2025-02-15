@@ -24,8 +24,8 @@ export class EmailService {
         this.mailerService
           .sendMail({
             to: email,
-            from: `"BbunlineSkate" <${this.customConfigService.EMAIL_USER}>`,
-            subject: '[BbunlineSkate] 당신의 뻔라인이 등록되었습니다!', //이메일 제목
+            from: `"뻔라인스케이팅" <${this.customConfigService.EMAIL_USER}>`,
+            subject: '🛼당신의 뻔라인에 새로운 사람이 추가되었어요🛼', //이메일 제목
             template: 'notification',
           })
           .catch((err) => {

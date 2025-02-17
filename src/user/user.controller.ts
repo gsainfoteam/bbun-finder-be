@@ -198,9 +198,7 @@ export class UserController {
   async findBbunUserWithStudentNumber(
     @GetUser() user: UserInfo,
   ): Promise<BbunUserResListDto> {
-    return {
-      list: await this.userService.findUserByMatchingSN(user.studentNumber),
-    };
+    return await this.userService.findUserByMatchingSN(user.studentNumber);
   }
 
   @ApiOperation({

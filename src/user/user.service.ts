@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { LoginDto } from './dto/req/login.dto';
 import { UserRepository } from './user.repository';
 import { JwtTokenType } from './types/jwtToken.type';
@@ -133,23 +128,23 @@ export class UserService {
   }
 
   //유저의 뻔라인 조회
-  async findUserByMatchingSN(studentNumber: string): Promise<BbunUserResDto[]> {
+  async findUserByMatchingSN(
+    studentNumber: string,
+  ): Promise<{ total: number; list: BbunUserResDto[] }> {
     const users = await this.userRepository.findUserByMatchingSN(
       studentNumber,
       true,
     );
 
-    if (users.length === 0) {
-      throw new NotFoundException(
-        'No users found with matching student number',
-      );
-    }
-    return users.map((user) => ({
-      ...user,
-      profileImage: user.profileImage
-        ? Buffer.from(user.profileImage).toString('base64')
-        : null,
-    }));
+    return {
+      total: users.length,
+      list: users.map((user) => ({
+        ...user,
+        profileImage: user.profileImage
+          ? Buffer.from(user.profileImage).toString('base64')
+          : null,
+      })),
+    };
   }
 
   //유저 정보 업데이트

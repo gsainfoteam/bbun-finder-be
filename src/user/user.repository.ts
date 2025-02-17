@@ -225,7 +225,7 @@ export class UserRepository {
               }),
         },
         orderBy: {
-          createdAt: 'asc',
+          studentNumber: 'asc',
         },
       })
       .catch((err) => {

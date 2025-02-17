@@ -90,5 +90,6 @@ export class BbunUserResListDto {
     type: [BbunUserResDto],
     isArray: true,
   })
+  total: number;
   list: BbunUserResDto[];
 }

@@ -72,7 +72,7 @@ export class UserRepository {
     return await this.prismaService.user
       .update({
         where: { studentNumber },
-        data: { ...updateData, isBbunRegistered: true },
+        data: { ...updateData, isBbunRegistered: true, deletedAt: null },
       })
       .catch((err) => {
         if (err instanceof PrismaClientKnownRequestError) {
@@ -100,7 +100,15 @@ export class UserRepository {
     const user = await this.prismaService.user
       .update({
         where: { studentNumber, deletedAt: null },
-        data: { isBbunRegistered: false, deletedAt: new Date() },
+        data: {
+          isBbunRegistered: false,
+          deletedAt: new Date(),
+          insta_ID: null,
+          department: null,
+          MBTI: null,
+          profileImage: null,
+          description: null,
+        },
       })
       .catch((err) => {
         if (err instanceof PrismaClientKnownRequestError) {

@@ -26,6 +26,7 @@ async function bootstrap() {
     /http:\/\/localhost:3000/,
     /http:\/\/localhost:12345/,
     /https:\/\/.*bbun.gistory.me/,
+    /https:\/\/bbun.gistory.me/,
     /https:\/\/.*bbun-fe.pages.dev/,
   ];
   app.enableCors({

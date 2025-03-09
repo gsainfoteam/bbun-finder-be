@@ -16,7 +16,7 @@ export class ImageRepository {
   constructor(private readonly prismaService: PrismaService) {}
 
   /**
-   * 사용자 프로필 이미지 webp로 저장
+   * 사용자 프로필 이미지를 webp로 저장
    * @param userUuid 사용자 UUID
    * @param imageBuffer 이미지 버퍼 데이터
    */

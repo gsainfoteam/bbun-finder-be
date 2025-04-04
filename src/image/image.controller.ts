@@ -55,10 +55,6 @@ export class ImageController {
       },
     },
   })
-  @ApiResponse({
-    status: 201,
-    description: 'Profile image uploaded successfully',
-  })
   @ApiOkResponse({ description: 'upload profileimage complete' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })

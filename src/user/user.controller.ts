@@ -140,7 +140,7 @@ export class UserController {
   })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
-  @Post('')
+  @Patch('register')
   @UseGuards(IdPGuard)
   async registerUser(
     @GetUser() user: UserInfo,

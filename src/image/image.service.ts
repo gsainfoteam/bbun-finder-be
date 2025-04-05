@@ -23,7 +23,9 @@ export class ImageService {
     if (!file) {
       throw new NotFoundException("There's no file");
     }
-    if (!['image/webp'].includes(file.mimetype)) {
+    const metadata = await sharp(file.buffer).metadata();
+
+    if (metadata.format !== 'webp') {
       throw new BadRequestException('Only WebP formats are supported');
     }
     await this.imageRepository.saveProfileImage(uuid, file.buffer);
@@ -96,10 +98,12 @@ export class ImageService {
    * @returns 변환된 WebP 이미지 버퍼
    */
   async convertToWebP(file: Express.Multer.File): Promise<Buffer> {
+    const metadata = await sharp(file.buffer).metadata();
+
     if (
-      !['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(
-        file.mimetype,
-      )
+      metadata.format === 'webp' ||
+      metadata.format === 'jpeg' ||
+      metadata.format === 'png'
     ) {
       throw new BadRequestException(
         'Only JPEG, PNG, and WebP formats are supported',

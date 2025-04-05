@@ -1,5 +1,10 @@
 import { Loggable } from '@lib/logger';
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import sharp, { FormatEnum } from 'sharp';
 import { ImageRepository } from './image.repository';
 
@@ -10,29 +15,59 @@ export class ImageService {
   constructor(private readonly imageRepository: ImageRepository) {}
 
   /**
-   * 프로필 이미지 업로드 (WebP 변환 후 저장)
+   * 프로필 이미지 업로드 (WebP로 받은 사진파일을 저장)
+   * @param uuid 사용자 UUID
+   * @param file 업로드된 파일
+   */
+  async uploadProfileWebpImage(uuid: string, file: Express.Multer.File) {
+    if (!file) {
+      throw new NotFoundException("There's no file");
+    }
+    const metadata = await sharp(file.buffer).metadata();
+
+    if (metadata.format !== 'webp') {
+      throw new BadRequestException('Only WebP formats are supported');
+    }
+    await this.imageRepository.saveProfileImage(uuid, file.buffer);
+  }
+
+  /**
+   * 프로필 이미지 업로드 (받은 사진파일을 WebP 변환 후 저장)
    * @param uuid 사용자 UUID
    * @param file 업로드된 파일
    */
   async uploadProfileImage(uuid: string, file: Express.Multer.File) {
     if (!file) {
-      throw new NotFoundException('파일이 제공되지 않았습니다.');
+      throw new NotFoundException("There's no file");
     }
-    const webpImage = await this.convertToWebP(file.buffer);
+    const webpImage = await this.convertToWebP(file);
     await this.imageRepository.saveProfileImage(uuid, webpImage);
   }
 
   /**
-   * WebP 프로필 이미지 조회
+   * WebP 프로필 이미지 조회(webp -> base64)
    * @param uuid 사용자 UUID
    * @returns WebP 이미지 버퍼
    */
-  async getProfileImageWithWebp(uuid: string): Promise<string> {
+  async getProfileWebImageToBase64(uuid: string): Promise<string> {
     const profileImage = await this.imageRepository.getProfileImage(uuid);
     if (!profileImage) {
       throw new NotFoundException('프로필 이미지가 존재하지 않습니다.');
     }
     return Buffer.from(profileImage).toString('base64');
+  }
+
+  /**
+   * WebP 프로필 이미지 조회(webp)
+   * @param uuid 사용자 UUID
+   * @returns WebP 이미지 버퍼
+   */
+  async getProfileWebpImage(uuid: string): Promise<Buffer> {
+    const profileImage = await this.imageRepository.getProfileImage(uuid);
+    if (!profileImage) {
+      throw new NotFoundException('프로필 이미지가 존재하지 않습니다.');
+    }
+    return Buffer.from(profileImage);
   }
 
   /**
@@ -62,10 +97,26 @@ export class ImageService {
    * @param buffer 원본 이미지 버퍼
    * @returns 변환된 WebP 이미지 버퍼
    */
-  async convertToWebP(imagebuffer: Buffer): Promise<Buffer> {
-    return await sharp(imagebuffer)
-      .webp({ quality: 80 }) // 품질 80 설정
-      .toBuffer();
+  async convertToWebP(file: Express.Multer.File): Promise<Buffer> {
+    const metadata = await sharp(file.buffer).metadata();
+
+    if (
+      metadata.format !== 'webp' &&
+      metadata.format !== 'jpeg' &&
+      metadata.format !== 'png'
+    ) {
+      throw new BadRequestException(
+        'Only JPEG, PNG, and WebP formats are supported',
+      );
+    }
+    return await sharp(file.buffer)
+      .webp({ quality: 10 }) // 품질 10/100 설정
+      .toBuffer()
+      .catch((err) => {
+        this.logger.error('convertToWebP Error');
+        this.logger.debug(err);
+        throw new BadRequestException('Error converting image to Webp');
+      });
   }
 
   /**
@@ -82,15 +133,4 @@ export class ImageService {
       .toFormat(format as keyof FormatEnum)
       .toBuffer();
   }
-
-  // //특정 사용자의 프로필 사진 조회
-  // async getProfileImage(uuid: string): Promise<string> {
-  //   const image = await this.userRepository.getProfileImage(uuid);
-
-  //   if (!image) {
-  //     throw new NotFoundException("There's no profile pictures");
-  //   }
-
-  //   return image;
-  // }
 }

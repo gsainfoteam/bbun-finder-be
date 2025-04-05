@@ -101,9 +101,9 @@ export class ImageService {
     const metadata = await sharp(file.buffer).metadata();
 
     if (
-      metadata.format === 'webp' ||
-      metadata.format === 'jpeg' ||
-      metadata.format === 'png'
+      metadata.format !== 'webp' &&
+      metadata.format !== 'jpeg' &&
+      metadata.format !== 'png'
     ) {
       throw new BadRequestException(
         'Only JPEG, PNG, and WebP formats are supported',

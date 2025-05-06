@@ -21,12 +21,6 @@ export class UserInfoRes implements UserInfo {
   name: string;
 
   @ApiProperty({
-    description: 'User phone number',
-    example: '01012345678',
-  })
-  phoneNumber: string;
-
-  @ApiProperty({
     description: 'Student number',
     example: '20212345',
   })

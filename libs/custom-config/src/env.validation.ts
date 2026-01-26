@@ -77,6 +77,30 @@ export class EnvironmentVariables {
   @IsString()
   @IsNotEmpty()
   EMAIL_PRIVATE_KEY: string;
+
+  @IsString()
+  @IsNotEmpty()
+  JWT_SECRET: string;
+
+  @IsString()
+  @IsNotEmpty()
+  JWT_ISSUER: string;
+
+  @IsString()
+  @IsNotEmpty()
+  JWT_AUDIENCE: string;
+
+  @IsString()
+  @IsNotEmpty()
+  JWT_EXPIRE: string;
+
+  @IsString()
+  @IsNotEmpty()
+  REFRESH_TOKEN_EXPIRE: string;
+
+  @IsString()
+  @IsNotEmpty()
+  REDIS_URL: string;
 }
 
 export type EnvironmentVariableKeys = keyof EnvironmentVariables;

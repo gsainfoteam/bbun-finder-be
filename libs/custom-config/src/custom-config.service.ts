@@ -85,4 +85,26 @@ export class CustomConfigService {
   get EMAIL_PRIVATE_KEY(): string {
     return this.getEnvVariable('EMAIL_PRIVATE_KEY');
   }
+
+  get JWT_SECRET(): string {
+    return this.getEnvVariable('JWT_SECRET');
+  }
+
+  get JWT_ISSUER(): string {
+    return this.getEnvVariable('JWT_ISSUER');
+  }
+
+  get JWT_AUDIENCE(): string {
+    return this.getEnvVariable('JWT_AUDIENCE');
+  }
+
+  get JWT_EXPIRE(): string {
+    return this.getEnvVariable('JWT_EXPIRE');
+  }
+  get REFRESH_TOKEN_EXPIRE(): string {
+    return this.getEnvVariable('REFRESH_TOKEN_EXPIRE');
+  }
+  get REDIS_URL(): string {
+    return this.getEnvVariable('REDIS_URL');
+  }
 }

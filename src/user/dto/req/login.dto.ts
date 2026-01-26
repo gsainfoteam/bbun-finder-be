@@ -1,3 +1,5 @@
+//전체 다 필요 없음
+
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { LoginType, loginEnum } from 'src/user/types/login.type';
 

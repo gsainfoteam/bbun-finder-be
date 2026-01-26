@@ -100,8 +100,9 @@ export class InfoteamIdpService {
       name,
       email,
       student_id: studentNumber,
+      picture,
     } = userInfoResponse.data;
-    return { uuid, name, email, studentNumber };
+    return { uuid, name, email, studentNumber, picture };
   }
 
   /**

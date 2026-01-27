@@ -1,7 +1,5 @@
-import { /*BadRequestException,*/ Injectable, Logger } from '@nestjs/common';
-// import { LoginDto } from './dto/req/login.dto';
+import { Injectable, Logger } from '@nestjs/common';
 import { UserRepository } from './user.repository';
-// import { JwtTokenType } from './types/jwtToken.type';
 import { User } from '@prisma/client';
 import { InfoteamIdpService } from '@lib/infoteam-idp';
 import { Loggable } from '@lib/logger/decorator/loggable';
@@ -23,70 +21,6 @@ export class UserService {
     private readonly userRepository: UserRepository,
     private readonly authRepository: AuthRepository,
   ) {}
-
-  // //deprecated
-  // /**
-  //  * this method is used to infoteam idp login,
-  //  * so we can assume user must have idp account
-  //  * because the sign up is handled by idp
-  //  *
-  //  * @returns accessToken, refreshToken
-  //  */
-  // async login({ code, type }: LoginDto): Promise<JwtTokenType> {
-  //   if (!code || !type) {
-  //     this.logger.debug('invalid code or type');
-  //     throw new BadRequestException();
-  //   }
-  //   const redirectUri =
-  //     type === 'local'
-  //       ? this.customConfigService.LOCAL_REDIRECT_URI
-  //       : this.customConfigService.WEB_REDIRECT_URI;
-  //   const tokens = await this.infoteamIdpService.getAccessToken(
-  //     code,
-  //     redirectUri,
-  //   );
-  //   return {
-  //     ...tokens,
-  //   };
-  // }
-
-  // //deprecated
-  // /**
-  //  * this method is used to refresh the access token.
-  //  * therefore, the user must have a refresh token.
-  //  * @param refreshToken
-  //  * @returns accessToken, refreshToken
-  //  */
-  // async refresh(refreshToken: string): Promise<JwtTokenType> {
-  //   const tokens = await this.infoteamIdpService.refresh(refreshToken);
-  //   return {
-  //     ...tokens,
-  //   };
-  // }
-
-  // //deprecated
-  // /**
-  //  * this method is used to logout the user from the idp
-  //  * @param accessToken
-  //  * @param refreshToken
-  //  * @returns void
-  //  */
-  // async logout(accessToken: string, refreshToken: string): Promise<void> {
-  //   await this.infoteamIdpService.revoke(accessToken);
-  //   await this.infoteamIdpService.revoke(refreshToken);
-  // }
-
-  // //deprecated
-  // /**
-  //  * this method is used to find the user or create the user
-  //  * @param user
-  //  * @returns user
-  //  */
-  // async findUserOrCreate(
-  //   user: Pick<User, 'uuid' | 'name' | 'email' | 'studentNumber'>,
-  // ): Promise<User> {
-  //   return this.authRepository.findUserOrCreate(user);
-  // }
 
   //서비스 회원탈퇴
   async deleteUser(

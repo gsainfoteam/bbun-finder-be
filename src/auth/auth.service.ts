@@ -1,4 +1,4 @@
-import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { AuthRepository } from './auth.repository';
 import { InfoteamIdpService } from '@lib/infoteam-idp';
 import { Loggable } from '@lib/logger/decorator/loggable';
@@ -37,8 +37,9 @@ export class AuthService {
     const userinfo = await this.infoteamIdpService.getUserInfo(idpToken);
     const user = await this.authRepository
       .findUserOrCreate(userinfo)
-      .catch(() => {
-        throw new UnauthorizedException();
+      .catch((err) => {
+        this.logger.debug(err);
+        throw err;
       });
     const tokens = await this.issueTokens(userinfo.uuid);
     return { ...tokens, consent_required: user.isBbunRegistered };

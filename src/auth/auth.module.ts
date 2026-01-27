@@ -12,12 +12,12 @@ import { JwtModule } from '@nestjs/jwt';
 import ms, { StringValue } from 'ms';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
-import { UserService } from 'src/user/user.service';
 import { EmailModule } from 'src/email/email.module';
 import { ImageModule } from 'src/image/image.module';
-
+import { RedisModule } from 'libs/redis/src';
 @Module({
   imports: [
+    RedisModule,
     EmailModule,
     ImageModule,
     CustomConfigModule,
@@ -39,7 +39,6 @@ import { ImageModule } from 'src/image/image.module';
     }),
   ],
   providers: [
-    UserService,
     AuthService,
     AuthRepository,
     JwtGuard,
@@ -49,6 +48,6 @@ import { ImageModule } from 'src/image/image.module';
     AnonymousStrategy,
   ],
   controllers: [AuthController],
-  exports: [JwtOptionalGuard, JwtGuard],
+  exports: [JwtOptionalGuard, JwtGuard, AuthRepository, AuthService],
 })
 export class AuthModule {}

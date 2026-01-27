@@ -12,13 +12,12 @@ import { LoggerModule } from '@lib/logger';
 import { CustomConfigModule } from '@lib/custom-config';
 import { ImageModule } from 'src/image/image.module';
 import { EmailModule } from 'src/email/email.module';
-import { JwtGuard, JwtOptionalGuard } from 'src/auth/guard/jwt.guard';
-import { JwtStrategy } from 'src/auth/guard/jwt.strategy';
-import { JwtOptionalStrategy } from 'src/auth/guard/jwtOptional.strategy';
-import { AnonymousStrategy } from 'src/auth/guard/anonymous.strategy';
+
+import { AuthModule } from 'src/auth/auth.module';
 
 @Module({
   imports: [
+    AuthModule,
     EmailModule,
     ImageModule,
     HttpModule,
@@ -27,16 +26,8 @@ import { AnonymousStrategy } from 'src/auth/guard/anonymous.strategy';
     InfoteamIdpModule,
     LoggerModule,
   ],
-  providers: [
-    UserService,
-    UserRepository,
-    JwtGuard,
-    JwtOptionalGuard,
-    JwtStrategy,
-    JwtOptionalStrategy,
-    AnonymousStrategy,
-  ],
+  providers: [UserService, UserRepository],
   controllers: [UserController],
-  exports: [UserService, JwtOptionalGuard, JwtGuard],
+  exports: [UserService],
 })
 export class UserModule {}

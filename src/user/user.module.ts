@@ -1,8 +1,5 @@
 import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
-import { IdPGuard, IdPOptionalGuard } from './guard/idp.guard';
-import { IdPStrategy } from './guard/idp.strategy';
-import { IdPOptionalStrategy } from './guard/idpOptional.strategy';
 import { UserController } from './user.controller';
 import { UserRepository } from './user.repository';
 import { UserService } from './user.service';
@@ -13,8 +10,11 @@ import { CustomConfigModule } from '@lib/custom-config';
 import { ImageModule } from 'src/image/image.module';
 import { EmailModule } from 'src/email/email.module';
 
+import { AuthModule } from 'src/auth/auth.module';
+
 @Module({
   imports: [
+    AuthModule,
     EmailModule,
     ImageModule,
     HttpModule,
@@ -23,15 +23,8 @@ import { EmailModule } from 'src/email/email.module';
     InfoteamIdpModule,
     LoggerModule,
   ],
-  providers: [
-    UserService,
-    UserRepository,
-    IdPGuard,
-    IdPOptionalGuard,
-    IdPStrategy,
-    IdPOptionalStrategy,
-  ],
+  providers: [UserService, UserRepository],
   controllers: [UserController],
-  exports: [UserService, IdPOptionalGuard, IdPGuard],
+  exports: [UserService],
 })
 export class UserModule {}

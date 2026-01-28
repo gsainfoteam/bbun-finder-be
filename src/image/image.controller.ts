@@ -25,11 +25,11 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { ImageService } from './image.service';
-import { IdPGuard } from 'src/user/guard/idp.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { GetUser } from 'src/user/decorator/get-user.decorator';
 import { UserInfo } from '@lib/infoteam-idp/types/userInfo.type';
 import { Response } from 'express';
+import { JwtGuard } from 'src/auth/guard/jwt.guard';
 
 @ApiTags('image')
 @ApiOAuth2(['openid', 'email', 'profile', 'student_'], 'oauth2')
@@ -59,7 +59,7 @@ export class ImageController {
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
   @Patch('')
-  @UseGuards(IdPGuard)
+  @UseGuards(JwtGuard)
   @UseInterceptors(
     FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }),
   ) // 10MB 제한
@@ -89,7 +89,7 @@ export class ImageController {
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
   @Get('')
-  @UseGuards(IdPGuard)
+  @UseGuards(JwtGuard)
   async getProfileWebpImage(
     @GetUser() user: UserInfo,
   ): Promise<StreamableFile> {
@@ -111,7 +111,7 @@ export class ImageController {
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
   @Delete('')
-  @UseGuards(IdPGuard)
+  @UseGuards(JwtGuard)
   async deleteProfileImage(
     @GetUser() user: UserInfo,
   ): Promise<{ message: string }> {
@@ -126,7 +126,7 @@ export class ImageController {
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
   @Get('base64')
-  @UseGuards(IdPGuard)
+  @UseGuards(JwtGuard)
   async getProfileWebpImageToBase64(@GetUser() user: UserInfo) {
     return await this.imageService.getProfileWebImageToBase64(user.uuid);
   }
@@ -156,7 +156,7 @@ export class ImageController {
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
   @Patch('original')
-  @UseGuards(IdPGuard)
+  @UseGuards(JwtGuard)
   @UseInterceptors(
     FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }),
   ) // 10MB 제한
@@ -186,7 +186,7 @@ export class ImageController {
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
   @Get('original')
-  @UseGuards(IdPGuard)
+  @UseGuards(JwtGuard)
   async getProfileImage(@GetUser() user: UserInfo) {
     return this.imageService.getOriginalProfileImage(user.uuid, 'png');
   }

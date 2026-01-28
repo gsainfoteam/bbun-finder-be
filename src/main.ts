@@ -3,6 +3,8 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { CustomConfigService } from '@lib/custom-config';
 import expressBasicAuth from 'express-basic-auth';
+import { json } from 'express';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -10,6 +12,7 @@ async function bootstrap() {
   // get configurations from .env
   const customConfigService = app.get(CustomConfigService);
 
+  // swagger auth config
   app.use(
     ['/api'],
     expressBasicAuth({
@@ -43,6 +46,11 @@ async function bootstrap() {
     credentials: true,
   });
 
+  // set json limit
+  app.use(json({ limit: '5mb' }));
+  // set cookie config
+  app.use(cookieParser());
+
   // set swagger config
   const config = new DocumentBuilder()
     .setTitle('BBun Finder API')
@@ -53,6 +61,7 @@ async function bootstrap() {
       {
         type: 'oauth2',
         scheme: 'bearer',
+        name: 'idp-token',
         in: 'header',
         bearerFormat: 'token',
         flows: {
@@ -70,6 +79,14 @@ async function bootstrap() {
       },
       'oauth2',
     )
+    .addBearerAuth(
+      {
+        type: 'http',
+        name: 'JWT',
+        in: 'header',
+      },
+      'jwt',
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
@@ -77,6 +94,10 @@ async function bootstrap() {
     swaggerOptions: {
       oauth2RedirectUrl: `${customConfigService.API_URL}/api/oauth2-redirect.html`,
       displayRequestDuration: true,
+      initOAuth: {
+        usePkceWithAuthorizationCodeGrant: true,
+        additionalQueryStringParams: { nonce: 'help' },
+      },
     },
   });
   // start server

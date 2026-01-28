@@ -1,7 +1,5 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { LoginDto } from './dto/req/login.dto';
+import { Injectable, Logger } from '@nestjs/common';
 import { UserRepository } from './user.repository';
-import { JwtTokenType } from './types/jwtToken.type';
 import { User } from '@prisma/client';
 import { InfoteamIdpService } from '@lib/infoteam-idp';
 import { Loggable } from '@lib/logger/decorator/loggable';
@@ -11,6 +9,7 @@ import { UserRegistrationDto } from './dto/res/userInfoRes.dto';
 import { BbunUserResDto } from './dto/res/bbunUser.dto';
 import { CreateTempUserDto, registerUserDto } from './dto/req/createUser.dto';
 import { EmailService } from 'src/email/email.service';
+import { AuthRepository } from 'src/auth/auth.repository';
 @Injectable()
 @Loggable()
 export class UserService {
@@ -20,93 +19,8 @@ export class UserService {
     private readonly emailService: EmailService,
     private readonly infoteamIdpService: InfoteamIdpService,
     private readonly userRepository: UserRepository,
+    private readonly authRepository: AuthRepository,
   ) {}
-
-  /**
-   * this method is used to infoteam idp login,
-   * so we can assume user must have idp account
-   * because the sign up is handled by idp
-   *
-   * @returns accessToken, refreshToken
-   */
-  async login({ code, type }: LoginDto): Promise<JwtTokenType> {
-    if (!code || !type) {
-      this.logger.debug('invalid code or type');
-      throw new BadRequestException();
-    }
-    const redirectUri =
-      type === 'local'
-        ? this.customConfigService.LOCAL_REDIRECT_URI
-        : this.customConfigService.WEB_REDIRECT_URI;
-    const tokens = await this.infoteamIdpService.getAccessToken(
-      code,
-      redirectUri,
-    );
-    return {
-      ...tokens,
-    };
-  }
-
-  /**
-   * this method is used to refresh the access token.
-   * therefore, the user must have a refresh token.
-   * @param refreshToken
-   * @returns accessToken, refreshToken
-   */
-  async refresh(refreshToken: string): Promise<JwtTokenType> {
-    const tokens = await this.infoteamIdpService.refresh(refreshToken);
-    return {
-      ...tokens,
-    };
-  }
-
-  /**
-   * this method is used to logout the user from the idp
-   * @param accessToken
-   * @param refreshToken
-   * @returns void
-   */
-  async logout(accessToken: string, refreshToken: string): Promise<void> {
-    await this.infoteamIdpService.revoke(accessToken);
-    await this.infoteamIdpService.revoke(refreshToken);
-  }
-
-  /**
-   * this method is used to find the user or create the user
-   * @param user
-   * @returns user
-   */
-  async findUserOrCreate(
-    user: Pick<User, 'uuid' | 'name' | 'email' | 'studentNumber'>,
-  ): Promise<User> {
-    return this.userRepository.findUserOrCreate(user);
-  }
-
-  //서비스 회원가입
-  async registerUser(
-    sendUser: Pick<User, 'name' | 'email' | 'studentNumber'>,
-    selection_info: registerUserDto,
-  ): Promise<BbunUserResDto> {
-    const user = await this.userRepository.registerUser(
-      sendUser.studentNumber,
-      selection_info,
-    );
-
-    //뻔라인 조회 및 이메일 전송을 위해 email list 조회
-    const bbunlineEmails = await this.userRepository.findUserToSendEmail(
-      sendUser.studentNumber,
-    );
-    const emailList = bbunlineEmails.map((user) => user.email);
-
-    await this.emailService.sendEmailBbunline(emailList);
-
-    return {
-      ...user,
-      profileImage: user.profileImage
-        ? Buffer.from(user.profileImage).toString('base64')
-        : null,
-    };
-  }
 
   //서비스 회원탈퇴
   async deleteUser(
@@ -115,9 +29,10 @@ export class UserService {
     return this.userRepository.deleteUser(user);
   }
 
-  //자기 자신의 정보 조회
+  //자기 자신의 정보 조회 (이거 수정해야 됨 )
+  //senUser를 굳이 pick으로 uuid만 뽑게 할 필요가 없음.
   async getUserInfoBbun(sendUser: Pick<User, 'uuid'>): Promise<BbunUserResDto> {
-    const user = await this.userRepository.findUserByUuid(sendUser);
+    const user = await this.authRepository.findUserByUuid(sendUser.uuid);
 
     return {
       ...user,
@@ -198,19 +113,19 @@ export class UserService {
     };
   }
 
-  //서비스 회원가입
+  //서비스 회원가입(임시테스트 용)
   async registerTempUser(
     studentNumber: string,
     selection_info: registerUserDto,
   ): Promise<BbunUserResDto> {
-    const user = await this.userRepository.registerUser(
+    const user = await this.authRepository.registerUser(
       studentNumber,
       selection_info,
     );
 
     //뻔라인 조회 및 이메일 전송을 위해 email list 조회
     const bbunlineEmails =
-      await this.userRepository.findUserToSendEmail(studentNumber);
+      await this.authRepository.findUserToSendEmail(studentNumber);
     const emailList = bbunlineEmails.map((user) => user.email);
 
     await this.emailService.sendEmailBbunline(emailList);

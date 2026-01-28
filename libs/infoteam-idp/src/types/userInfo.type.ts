@@ -3,4 +3,5 @@ export type UserInfo = {
   email: string;
   name: string;
   studentNumber: string;
+  picture?: string | null;
 };

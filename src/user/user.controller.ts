@@ -22,8 +22,7 @@ import {
 } from '@nestjs/swagger';
 import { JwtGuard } from 'src/auth/guard/jwt.guard';
 import { GetUser } from './decorator/get-user.decorator';
-import { UserInfoRes, UserRegistrationDto } from './dto/res/userInfoRes.dto';
-import { GetIdPUser } from './decorator/get-idp-user.decorator';
+import { UserRegistrationDto } from './dto/res/userInfoRes.dto';
 import { UserInfo } from '@lib/infoteam-idp/types/userInfo.type';
 import { UpdateUserDto } from './dto/req/updateUser.dto';
 import { BbunUserResDto, BbunUserResListDto } from './dto/res/bbunUser.dto';
@@ -35,20 +34,6 @@ import { CreateTempUserDto, registerUserDto } from './dto/req/createUser.dto';
 @UsePipes(ValidationPipe)
 export class UserController {
   constructor(private readonly userService: UserService) {}
-
-  @ApiOperation({
-    summary: 'get user info from IdP',
-    description: 'get user info from IdP',
-    deprecated: true,
-  })
-  @ApiOkResponse({ type: UserInfoRes, description: 'Return user info' })
-  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
-  @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
-  @Get('idp')
-  @UseGuards(JwtGuard)
-  async getUserInfoIdP(@GetIdPUser() user: UserInfo): Promise<UserInfoRes> {
-    return user;
-  }
 
   @ApiOperation({
     summary: '뻔라인스케이트 회원탈퇴',

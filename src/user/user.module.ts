@@ -1,8 +1,5 @@
 import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
-// import { IdPGuard, IdPOptionalGuard } from './guard/idp.guard';
-// import { IdPStrategy } from './guard/idp.strategy';
-// import { IdPOptionalStrategy } from './guard/idpOptional.strategy';
 import { UserController } from './user.controller';
 import { UserRepository } from './user.repository';
 import { UserService } from './user.service';

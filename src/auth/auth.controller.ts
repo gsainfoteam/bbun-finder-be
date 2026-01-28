@@ -59,7 +59,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<JwtToken> {
     const auth = req.headers['authorization'];
-    if (!auth) throw new UnauthorizedException();
+    if (!auth?.startsWith('Bearer ')) throw new UnauthorizedException();
 
     const { access_token, refresh_token, consent_required } =
       await this.authService.login(auth);

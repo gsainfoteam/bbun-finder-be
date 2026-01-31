@@ -1,5 +1,5 @@
 #Step 1: Build the app in image 'builder'
-FROM node:24-alpine3.18 AS builder
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 
@@ -16,7 +16,7 @@ RUN npx prisma generate
 RUN npm run build
 
 #Step 2: Copy the build from 'builder' to 'runner'
-FROM node:24-alpine3.18
+FROM node:24-alpine
 
 WORKDIR /app
 

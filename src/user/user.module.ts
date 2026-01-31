@@ -1,30 +1,15 @@
-import { HttpModule } from '@nestjs/axios';
+import { CustomConfigModule } from '@lib/custom-config';
+import { EmailModule } from '@lib/email';
+import { PrismaModule } from '@lib/prisma';
 import { Module } from '@nestjs/common';
 import { UserController } from './user.controller';
-import { UserRepository } from './user.repository';
 import { UserService } from './user.service';
-import { PrismaModule } from '@lib/prisma';
-import { InfoteamIdpModule } from '@lib/infoteam-idp';
-import { LoggerModule } from '@lib/logger';
-import { CustomConfigModule } from '@lib/custom-config';
-import { ImageModule } from 'src/image/image.module';
-import { EmailModule } from 'src/email/email.module';
-
-import { AuthModule } from 'src/auth/auth.module';
+import { UserRepository } from './user.repository';
 
 @Module({
-  imports: [
-    AuthModule,
-    EmailModule,
-    ImageModule,
-    HttpModule,
-    CustomConfigModule,
-    PrismaModule,
-    InfoteamIdpModule,
-    LoggerModule,
-  ],
-  providers: [UserService, UserRepository],
+  imports: [PrismaModule, EmailModule, CustomConfigModule],
   controllers: [UserController],
-  exports: [UserService],
+  providers: [UserService, UserRepository],
+  exports: [UserRepository],
 })
 export class UserModule {}

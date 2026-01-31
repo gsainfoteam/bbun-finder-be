@@ -4,31 +4,34 @@
   "sourceRoot": "src",
   "compilerOptions": {
     "deleteOutDir": true,
-    "assets": [
-      {
-        "include": "email/templates/**/*",
-        "outDir": "dist/src/"
-      }
-    ],
-    "watchAssets": true
+    "webpack": true
   },
   "projects": {
-    "prisma": {
+    "custom-config": {
       "type": "library",
-      "root": "libs/prisma",
+      "root": "libs/custom-config",
       "entryFile": "index",
-      "sourceRoot": "libs/prisma/src",
+      "sourceRoot": "libs/custom-config/src",
       "compilerOptions": {
-        "tsConfigPath": "libs/prisma/tsconfig.lib.json"
+        "tsConfigPath": "libs/custom-config/tsconfig.lib.json"
       }
     },
-    "infoteam-idp": {
+    "email": {
       "type": "library",
-      "root": "libs/infoteam-idp",
+      "root": "libs/email",
       "entryFile": "index",
-      "sourceRoot": "libs/infoteam-idp/src",
+      "sourceRoot": "libs/email/src",
       "compilerOptions": {
-        "tsConfigPath": "libs/infoteam-idp/tsconfig.lib.json"
+        "tsConfigPath": "libs/email/tsconfig.lib.json"
+      }
+    },
+    "infoteam-account": {
+      "type": "library",
+      "root": "libs/infoteam-account",
+      "entryFile": "index",
+      "sourceRoot": "libs/infoteam-account/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/infoteam-account/tsconfig.lib.json"
       }
     },
     "logger": {
@@ -40,13 +43,22 @@
         "tsConfigPath": "libs/logger/tsconfig.lib.json"
       }
     },
-    "config": {
+    "prisma": {
       "type": "library",
-      "root": "libs/config",
+      "root": "libs/prisma",
       "entryFile": "index",
-      "sourceRoot": "libs/config/src",
+      "sourceRoot": "libs/prisma/src",
       "compilerOptions": {
-        "tsConfigPath": "libs/config/tsconfig.lib.json"
+        "tsConfigPath": "libs/prisma/tsconfig.lib.json"
+      }
+    },
+    "redis": {
+      "type": "library",
+      "root": "libs/redis",
+      "entryFile": "index",
+      "sourceRoot": "libs/redis/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/redis/tsconfig.lib.json"
       }
     }
   }

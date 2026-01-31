@@ -1,6 +1,7 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from 'generated/prisma/client';
 
 /**
  * Service for using Prisma.
@@ -12,11 +13,9 @@ export class PrismaService
 {
   constructor(readonly configService: ConfigService) {
     super({
-      datasources: {
-        db: {
-          url: configService.get<string>('DATABASE_URL'),
-        },
-      },
+      adapter: new PrismaPg({
+        connectionString: configService.get<string>('DATABASE_URL'),
+      }),
     });
   }
 

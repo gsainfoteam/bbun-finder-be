@@ -1,7 +1,7 @@
 export type JwtTokenType = {
   access_token: string;
   refresh_token: string;
-  consent_required: boolean;
+  consent: boolean;
 };
 
 export type IssueTokenType = {

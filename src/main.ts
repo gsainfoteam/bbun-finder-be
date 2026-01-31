@@ -1,10 +1,10 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { CustomConfigService } from '@lib/custom-config';
 import expressBasicAuth from 'express-basic-auth';
 import { json } from 'express';
 import cookieParser from 'cookie-parser';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -33,7 +33,10 @@ async function bootstrap() {
     /https:\/\/.*bbun-fe.pages.dev/,
   ];
   app.enableCors({
-    origin: function (origin, callback) {
+    origin: function (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: string) => void,
+    ) {
       if (!origin || whitelist.some((regex) => regex.test(origin))) {
         callback(null, origin);
       } else {
@@ -54,16 +57,15 @@ async function bootstrap() {
   // set swagger config
   const config = new DocumentBuilder()
     .setTitle('BBun Finder API')
-    .setDescription('API Document for Bbun backend!')
+    .setDescription('API Document for Bbun backend')
     .setVersion(customConfigService.API_VERSION)
-    .addTag('Bbunlineskates')
     .addOAuth2(
       {
         type: 'oauth2',
         scheme: 'bearer',
-        name: 'idp-token',
         in: 'header',
         bearerFormat: 'token',
+        'x-tokenName': 'id_token',
         flows: {
           authorizationCode: {
             authorizationUrl: customConfigService.SWAGGER_AUTH_URL,
@@ -82,7 +84,8 @@ async function bootstrap() {
     .addBearerAuth(
       {
         type: 'http',
-        name: 'JWT',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
         in: 'header',
       },
       'jwt',
@@ -103,4 +106,5 @@ async function bootstrap() {
   // start server
   await app.listen(3000);
 }
+// eslint-disable-next-line @typescript-eslint/no-floating-promises
 bootstrap();

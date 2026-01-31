@@ -1,29 +1,24 @@
 import { Module } from '@nestjs/common';
-import { AnonymousStrategy } from './guard/anonymous.strategy';
+import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
 import { AuthRepository } from './auth.repository';
 import { PrismaModule } from '@lib/prisma';
-import { InfoteamIdpModule } from '@lib/infoteam-idp';
-import { LoggerModule } from '@lib/logger';
 import { CustomConfigModule, CustomConfigService } from '@lib/custom-config';
-import { JwtGuard, JwtOptionalGuard } from './guard/jwt.guard';
-import { JwtOptionalStrategy } from './guard/jwtOptional.strategy';
-import { JwtStrategy } from './guard/jwt.strategy';
+import { InfoteamAccountModule } from '@lib/infoteam-account';
+import { InfoteamAccountStrategy } from './guards/InfoteamAccount.strategy';
+import { InfoteamAccountGuard } from './guards/InfoteamAccount.guard';
+import { RedisModule } from '@lib/redis';
 import { JwtModule } from '@nestjs/jwt';
 import ms, { StringValue } from 'ms';
-import { AuthService } from './auth.service';
-import { AuthController } from './auth.controller';
-import { EmailModule } from 'src/email/email.module';
-import { ImageModule } from 'src/image/image.module';
-import { RedisModule } from 'libs/redis/src';
+import { JwtStrategy } from './guards/jwt.strategy';
+import { JwtGuard } from './guards/jwt.guard';
+
 @Module({
   imports: [
-    RedisModule,
-    EmailModule,
-    ImageModule,
-    CustomConfigModule,
     PrismaModule,
-    InfoteamIdpModule,
-    LoggerModule,
+    CustomConfigModule,
+    InfoteamAccountModule,
+    RedisModule,
     JwtModule.registerAsync({
       imports: [CustomConfigModule],
       inject: [CustomConfigService],
@@ -38,16 +33,15 @@ import { RedisModule } from 'libs/redis/src';
       }),
     }),
   ],
+  controllers: [AuthController],
   providers: [
     AuthService,
     AuthRepository,
-    JwtGuard,
-    JwtOptionalGuard,
+    InfoteamAccountStrategy,
+    InfoteamAccountGuard,
     JwtStrategy,
-    JwtOptionalStrategy,
-    AnonymousStrategy,
+    JwtGuard,
   ],
-  controllers: [AuthController],
-  exports: [JwtOptionalGuard, JwtGuard, AuthRepository, AuthService],
+  exports: [InfoteamAccountGuard, JwtGuard],
 })
 export class AuthModule {}

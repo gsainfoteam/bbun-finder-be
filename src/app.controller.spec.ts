@@ -1,22 +1,27 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { CustomConfigModule } from '@lib/custom-config';
 
 describe('AppController', () => {
   let appController: AppController;
 
   beforeEach(async () => {
     const app: TestingModule = await Test.createTestingModule({
+      imports: [CustomConfigModule],
       controllers: [AppController],
-      providers: [AppService],
     }).compile();
 
     appController = app.get<AppController>(AppController);
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+    it('should return service information', () => {
+      expect(appController.info()).toEqual({
+        name: 'bbun',
+        version: expect.any(String),
+        publishedAt: expect.any(String),
+      });
     });
   });
 });

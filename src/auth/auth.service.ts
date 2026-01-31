@@ -34,7 +34,7 @@ export class AuthService {
   /**
    * this method is used to login the user and issue the access token and refresh token.
    * @param param0 IdTokenPayloadType
-   * @returns accessToken, refreshToken and the information that is  the user consent required
+   * @returns accessToken, refreshToken and the information that is  the user consent
    */
   async login({
     sub,
@@ -51,14 +51,14 @@ export class AuthService {
       profileImageUrl: picture,
     });
     const tokens = await this.issueTokens(user.uuid);
-    return { ...tokens, consent_required: user.consent };
+    return { ...tokens, consent: user.consent };
   }
 
   /**
    * this method is used to refresh the access token.
    * therefore, the user must have a refresh token.
    * @param refreshToken
-   * @returns accessToken, refreshToken and the information that is  the user consent required
+   * @returns accessToken, refreshToken and the information that is  the user consent
    */
   async refresh(refreshToken: string): Promise<JwtTokenType> {
     const uuid = await this.redisService
@@ -76,7 +76,7 @@ export class AuthService {
     return {
       access_token,
       refresh_token,
-      consent_required: user.consent,
+      consent: user.consent,
     };
   }
 

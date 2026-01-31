@@ -27,7 +27,7 @@ export class UpdateDataDto {
   })
   @IsOptional()
   @IsString()
-  insta_ID?: string;
+  instaId?: string;
 
   @ApiProperty({
     description: 'User short introduction',

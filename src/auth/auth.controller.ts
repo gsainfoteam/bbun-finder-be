@@ -56,7 +56,7 @@ export class AuthController {
     @GetInfoteamAccountUser() user: infoteamAccount.IdTokenPayloadType,
     @Res({ passthrough: true }) res: express.Response,
   ): Promise<JwtToken> {
-    const { access_token, refresh_token, consent_required } =
+    const { access_token, refresh_token, consent } =
       await this.authService.login(user);
     res.cookie('refresh_token', refresh_token, {
       httpOnly: true,
@@ -65,7 +65,7 @@ export class AuthController {
       expires: new Date(Date.now() + this.refreshTokenExpire),
       path: '/auth',
     });
-    return { access_token, consent_required };
+    return { access_token, consent };
   }
 
   @ApiOperation({
@@ -80,9 +80,9 @@ export class AuthController {
   async refreshToken(@Req() req: express.Request): Promise<JwtToken> {
     const refreshToken = req.cookies['refresh_token'] as string | undefined;
     if (!refreshToken) throw new UnauthorizedException();
-    const { access_token, consent_required } =
+    const { access_token, consent } =
       await this.authService.refresh(refreshToken);
-    return { access_token, consent_required };
+    return { access_token, consent };
   }
 
   @ApiOperation({
@@ -90,7 +90,7 @@ export class AuthController {
     description: 'Logout the user from the cookie and idp',
   })
   @ApiBearerAuth('jwt')
-  @ApiCreatedResponse({ description: 'Return jwt token' })
+  @ApiCreatedResponse({ description: 'Logout successful' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
   @ApiBearerAuth('jwt')

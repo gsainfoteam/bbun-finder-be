@@ -14,5 +14,5 @@ export class JwtToken {
     description: 'The user consent required',
     example: false,
   })
-  consent_required: boolean;
+  consent: boolean;
 }

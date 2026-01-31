@@ -60,16 +60,27 @@ export class UserRepository {
     email,
     student_id,
   }: IdTokenPayloadType): Promise<Prisma.UserModel> {
-    return await this.prismaService.user.create({
-      data: {
-        uuid: sub,
-        profileImageUrl: picture,
-        name,
-        email,
-        studentNumber: student_id,
-        consent: true,
-      },
-    });
+    return await this.prismaService.user
+      .create({
+        data: {
+          uuid: sub,
+          profileImageUrl: picture,
+          name,
+          email,
+          studentNumber: student_id,
+          consent: true,
+        },
+      })
+      .catch((err) => {
+        if (err instanceof Prisma.PrismaClientKnownRequestError) {
+          this.logger.error('createUser Error');
+          this.logger.debug(err);
+          throw new InternalServerErrorException('Database Error');
+        }
+        this.logger.error('createUser Error');
+        this.logger.debug(err);
+        throw new InternalServerErrorException('Unknown Error');
+      });
   }
 
   //등록 상태 변경(isBbunRegistered), 동의/ 비동의 여부

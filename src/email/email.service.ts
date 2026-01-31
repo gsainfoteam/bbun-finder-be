@@ -29,15 +29,13 @@ export class EmailService {
             template: 'notification',
           })
           .catch((err) => {
-            this.logger.error(
-              `❌ Failed to send email to ${email}: ${err.message}`,
-            );
+            this.logger.error(`❌ Failed to send email to ${email}: ${err}`);
           }),
       ),
     )
       .then(() => this.logger.log(`✅ All emails have been processed.`))
       .catch((err) => {
-        this.logger.error(`🔥 Critical error in email sending: ${err.message}`);
+        this.logger.error(`🔥 Critical error in email sending: ${err}`);
         throw new Error('Email sending fail');
       });
   }

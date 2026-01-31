@@ -4,11 +4,7 @@ import { IsNotEmpty, IsString, validateSync } from 'class-validator';
 export class EnvironmentVariables {
   @IsString()
   @IsNotEmpty()
-  IDP_URL: string;
-
-  @IsString()
-  @IsNotEmpty()
-  IDP_BASE_URL: string;
+  INFOTEAM_ACCOUNT_BASE_URL: string;
 
   @IsString()
   @IsNotEmpty()
@@ -45,14 +41,6 @@ export class EnvironmentVariables {
   @IsString()
   @IsNotEmpty()
   API_VERSION: string;
-
-  @IsString()
-  @IsNotEmpty()
-  LOCAL_REDIRECT_URI: string;
-
-  @IsString()
-  @IsNotEmpty()
-  WEB_REDIRECT_URI: string;
 
   @IsString()
   @IsNotEmpty()

@@ -1,34 +1,57 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "resolvePackageJsonExports": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
-    "target": "ES2021",
+    "target": "ES2023",
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": true,
+    "forceConsistentCasingInFileNames": true,
     "noImplicitAny": true,
     "strictBindCallApply": true,
-    "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
-    "esModuleInterop": true,
     "paths": {
-      "@lib/prisma": ["libs/prisma/src"],
-      "@lib/prisma/*": ["libs/prisma/src/*"],
-      "@lib/infoteam-idp": ["libs/infoteam-idp/src"],
-      "@lib/infoteam-idp/*": ["libs/infoteam-idp/src/*"],
-      "@lib/logger": ["libs/logger/src"],
-      "@lib/logger/*": ["libs/logger/src/*"],
-      "@lib/config": ["libs/config/src"],
-      "@lib/config/*": ["libs/config/src/*"],
-      "@lib/custom-config": ["libs/custom-config/src"],
-      "@lib/custom-config/*": ["libs/custom-config/src/*"]
+      "@lib/custom-config": [
+        "libs/custom-config/src"
+      ],
+      "@lib/custom-config/*": [
+        "libs/custom-config/src/*"
+      ],
+      "@lib/infoteam-account": [
+        "libs/infoteam-account/src"
+      ],
+      "@lib/infoteam-account/*": [
+        "libs/infoteam-account/src/*"
+      ],
+      "@lib/logger": [
+        "libs/logger/src"
+      ],
+      "@lib/logger/*": [
+        "libs/logger/src/*"
+      ],
+      "@lib/prisma": [
+        "libs/prisma/src"
+      ],
+      "@lib/prisma/*": [
+        "libs/prisma/src/*"
+      ],
+      "@lib/redis": [
+        "libs/redis/src"
+      ],
+      "@lib/redis/*": [
+        "libs/redis/src/*"
+      ]
     }
   }
 }

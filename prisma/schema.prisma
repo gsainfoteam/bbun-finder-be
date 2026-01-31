@@ -5,30 +5,30 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url = env("DATABASE_URL")
 }
 
 model User {
-  uuid String           @id @db.Uuid
-  name String                    //이름
-  studentNumber String  @unique  //학번
-  email String          @unique  //이메일
-  createdAt DateTime    @default(now()) @map("created_at")
-  updatedAt DateTime    @default(now()) @map("updated_at") @updatedAt
-  deletedAt DateTime?   @map("deleted_at") 
+  uuid          String    @id @db.Uuid
+  name          String //이름
+  studentNumber String    @unique @map("student_number") //학번
+  email         String    @unique //이메일
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
 
-  isBbunRegistered Boolean @default(false)
-  department String?    //학과
-  MBTI String?          //MBTI
-  insta_ID String?      //인스타 아이디
-  description String?   //짧은 소개
-  
-  profileImage Bytes?  //프로필 이미지(webp 형식으로 압축 및 저장)
-  
+  isBbunRegistered Boolean @default(false) @map("is_bbun_registered") //BBun 등록 여부
+  department       String? @map("department") //학과
+  MBTI             String? @map("mbti") //MBTI
+  instaId          String? @map("insta_id") //인스타 아이디
+  description      String? @map("description") //짧은 소개
+
+  profileImageUrl String? @map("profile_image_url") //프로필 이미지 URL
+
   @@map("user")
 }

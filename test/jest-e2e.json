@@ -1,9 +1,20 @@
 {
-  "moduleFileExtensions": ["js", "json", "ts"],
+  "moduleFileExtensions": [
+    "js",
+    "json",
+    "ts"
+  ],
   "rootDir": ".",
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "moduleNameMapper": {
+    "^@lib/custom-config(|/.*)$": "<rootDir>/../libs/custom-config/src/$1",
+    "^@lib/infoteam-account(|/.*)$": "<rootDir>/../libs/infoteam-account/src/$1",
+    "^@lib/logger(|/.*)$": "<rootDir>/../libs/logger/src/$1",
+    "^@lib/prisma(|/.*)$": "<rootDir>/../libs/prisma/src/$1",
+    "^@lib/redis(|/.*)$": "<rootDir>/../libs/redis/src/$1"
   }
 }

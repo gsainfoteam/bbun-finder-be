@@ -22,36 +22,18 @@
     "strictBindCallApply": true,
     "noFallthroughCasesInSwitch": true,
     "paths": {
-      "@lib/custom-config": [
-        "libs/custom-config/src"
-      ],
-      "@lib/custom-config/*": [
-        "libs/custom-config/src/*"
-      ],
-      "@lib/infoteam-account": [
-        "libs/infoteam-account/src"
-      ],
-      "@lib/infoteam-account/*": [
-        "libs/infoteam-account/src/*"
-      ],
-      "@lib/logger": [
-        "libs/logger/src"
-      ],
-      "@lib/logger/*": [
-        "libs/logger/src/*"
-      ],
-      "@lib/prisma": [
-        "libs/prisma/src"
-      ],
-      "@lib/prisma/*": [
-        "libs/prisma/src/*"
-      ],
-      "@lib/redis": [
-        "libs/redis/src"
-      ],
-      "@lib/redis/*": [
-        "libs/redis/src/*"
-      ]
+      "@lib/custom-config": ["libs/custom-config/src"],
+      "@lib/custom-config/*": ["libs/custom-config/src/*"],
+      "@lib/email": ["libs/email/src"],
+      "@lib/email/*": ["libs/email/src/*"],
+      "@lib/infoteam-account": ["libs/infoteam-account/src"],
+      "@lib/infoteam-account/*": ["libs/infoteam-account/src/*"],
+      "@lib/logger": ["libs/logger/src"],
+      "@lib/logger/*": ["libs/logger/src/*"],
+      "@lib/prisma": ["libs/prisma/src"],
+      "@lib/prisma/*": ["libs/prisma/src/*"],
+      "@lib/redis": ["libs/redis/src"],
+      "@lib/redis/*": ["libs/redis/src/*"]
     }
   }
 }

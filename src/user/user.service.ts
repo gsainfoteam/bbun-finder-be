@@ -144,4 +144,30 @@ export class UserService {
   ): Promise<UserRegistrationDto> {
     return this.userRepository.updateIsBbunRegistered(registration);
   }
+
+  //서비스 회원가입
+  async registerUser(
+    sendUser: Pick<Prisma.UserModel, 'name' | 'email' | 'studentNumber'>,
+    selection_info: registerUserDto,
+  ): Promise<BbunUserResDto> {
+    const user = await this.authRepository.registerUser(
+      sendUser.studentNumber,
+      selection_info,
+    );
+
+    //뻔라인 조회 및 이메일 전송을 위해 email list 조회
+    const bbunlineEmails = await this.authRepository.findUserToSendEmail(
+      sendUser.studentNumber,
+    );
+    const emailList = bbunlineEmails.map((user) => user.email);
+
+    await this.emailSerivce.sendEmailBbunline(emailList);
+
+    return {
+      ...user,
+      profileImage: user.profileImage
+        ? Buffer.from(user.profileImage).toString('base64')
+        : null,
+    };
+  }
 }

@@ -1,17 +1,17 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { AuthRepository } from './auth.repository';
-import { InfoteamIdpService } from '@lib/infoteam-idp';
 import { Loggable } from '@lib/logger/decorator/loggable';
 import { CustomConfigService } from '@lib/custom-config';
 import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
 import ms, { StringValue } from 'ms';
-import { User } from '@prisma/client';
 import { IssueTokenType, JwtTokenType } from './types/jwtToken.types';
 import { RedisService } from 'libs/redis/src';
-import { EmailService } from 'src/email/email.service';
-import { registerUserDto } from 'src/user/dto/req/createUser.dto';
-import { BbunUserResDto } from 'src/user/dto/res/bbunUser.dto';
+import {
+  IdTokenPayloadType,
+  InfoteamAccountService,
+} from '@lib/infoteam-account';
+import { Prisma } from 'generated/prisma/client';
 
 @Injectable()
 @Loggable()
@@ -21,27 +21,24 @@ export class AuthService {
   private readonly refreshTokenExpire: number;
   constructor(
     private readonly customConfigService: CustomConfigService,
-    private readonly infoteamIdpService: InfoteamIdpService,
+    private readonly infoteamAccountService: InfoteamAccountService,
     private readonly authRepository: AuthRepository,
     private readonly jwtService: JwtService,
     private readonly redisService: RedisService,
-    private readonly emailSerivce: EmailService,
   ) {
     this.refreshTokenExpire = ms(
       customConfigService.REFRESH_TOKEN_EXPIRE as StringValue,
     );
   }
 
-  async login(auth: string): Promise<JwtTokenType> {
-    const idpToken = auth.split(' ')[1];
-    const userinfo = await this.infoteamIdpService.getUserInfo(idpToken);
-    const user = await this.authRepository
-      .findUserOrCreate(userinfo)
-      .catch((err) => {
-        this.logger.debug(err);
-        throw err;
-      });
-    const tokens = await this.issueTokens(userinfo.uuid);
+  /**
+   * this method is used to login the user and issue the access token and refresh token.
+   * @param param0 IdTokenPayloadType
+   * @returns accessToken, refreshToken and the information that is  the user consent required
+   */
+  async login({ sub }: IdTokenPayloadType): Promise<JwtTokenType> {
+    const user = await this.authRepository.findUserByUuid(sub);
+    const tokens = await this.issueTokens(user.uuid);
     return { ...tokens, consent_required: user.isBbunRegistered };
   }
 
@@ -52,13 +49,21 @@ export class AuthService {
    * @returns accessToken, refreshToken and the information that is  the user consent required
    */
   async refresh(refreshToken: string): Promise<JwtTokenType> {
-    const uuid = await this.redisService.getOrThrow<string>(refreshToken, {
+    const uuid = await this.redisService
+      .getOrThrow<string>(refreshToken, {
+        prefix: this.refreshTokenPrefix,
+      })
+      .catch(() => {
+        throw new UnauthorizedException('Invalid refresh token');
+      });
+    const user = await this.authRepository.findUserByUuid(uuid);
+    await this.redisService.del(refreshToken, {
       prefix: this.refreshTokenPrefix,
     });
-    const user = await this.authRepository.findUserByUuid(uuid);
+    const { access_token, refresh_token } = await this.issueTokens(user.uuid);
     return {
-      access_token: this.jwtService.sign({}, { subject: uuid }),
-      refresh_token: refreshToken,
+      access_token,
+      refresh_token,
       consent_required: user.isBbunRegistered,
     };
   }
@@ -75,7 +80,11 @@ export class AuthService {
     });
   }
 
-  async findUserByUuid(uuid: string): Promise<User> {
+  async validateIdToken(idToken: string): Promise<IdTokenPayloadType> {
+    return this.infoteamAccountService.verifyOpenIdToken(idToken);
+  }
+
+  async findUserByUuid(uuid: string): Promise<Prisma.UserModel> {
     return await this.authRepository.findUserByUuid(uuid);
   }
 
@@ -95,32 +104,6 @@ export class AuthService {
     return {
       access_token: this.jwtService.sign({}, { subject: uuid }),
       refresh_token,
-    };
-  }
-
-  //서비스 회원가입
-  async registerUser(
-    sendUser: Pick<User, 'name' | 'email' | 'studentNumber'>,
-    selection_info: registerUserDto,
-  ): Promise<BbunUserResDto> {
-    const user = await this.authRepository.registerUser(
-      sendUser.studentNumber,
-      selection_info,
-    );
-
-    //뻔라인 조회 및 이메일 전송을 위해 email list 조회
-    const bbunlineEmails = await this.authRepository.findUserToSendEmail(
-      sendUser.studentNumber,
-    );
-    const emailList = bbunlineEmails.map((user) => user.email);
-
-    await this.emailSerivce.sendEmailBbunline(emailList);
-
-    return {
-      ...user,
-      profileImage: user.profileImage
-        ? Buffer.from(user.profileImage).toString('base64')
-        : null,
     };
   }
 }

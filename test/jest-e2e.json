@@ -12,6 +12,7 @@
   },
   "moduleNameMapper": {
     "^@lib/custom-config(|/.*)$": "<rootDir>/../libs/custom-config/src/$1",
+    "^@lib/email(|/.*)$": "<rootDir>/../libs/email/src/$1",
     "^@lib/infoteam-account(|/.*)$": "<rootDir>/../libs/infoteam-account/src/$1",
     "^@lib/logger(|/.*)$": "<rootDir>/../libs/logger/src/$1",
     "^@lib/prisma(|/.*)$": "<rootDir>/../libs/prisma/src/$1",

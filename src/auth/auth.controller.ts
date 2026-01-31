@@ -7,10 +7,8 @@ import {
   UseGuards,
   UsePipes,
   ValidationPipe,
-  Patch,
-  Body,
 } from '@nestjs/common';
-import { Request, Response } from 'express';
+import express from 'express';
 import { JwtToken } from './dto/res/jwtToken.dto';
 import { AuthService } from './auth.service';
 import {
@@ -23,13 +21,12 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { JwtGuard } from './guard/jwt.guard';
 import ms, { StringValue } from 'ms';
 import { CustomConfigService } from '@lib/custom-config';
-import { BbunUserResDto } from 'src/user/dto/res/bbunUser.dto';
-import { UserInfo } from '@lib/infoteam-idp/types/userInfo.type';
-import { registerUserDto } from 'src/user/dto/req/createUser.dto';
-import { GetUser } from 'src/user/decorator/get-user.decorator';
+import { InfoteamAccountGuard } from './guards/InfoteamAccount.guard';
+import { GetInfoteamAccountUser } from './decorators/getInfoteamAccountUser.decorator';
+import * as infoteamAccount from '@lib/infoteam-account';
+import { JwtGuard } from './guards/jwt.guard';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -53,16 +50,14 @@ export class AuthController {
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
   @ApiOAuth2(['email', 'profile', 'openid'], 'oauth2')
+  @UseGuards(InfoteamAccountGuard)
   @Post('login')
   async login(
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
+    @GetInfoteamAccountUser() user: infoteamAccount.IdTokenPayloadType,
+    @Res({ passthrough: true }) res: express.Response,
   ): Promise<JwtToken> {
-    const auth = req.headers['authorization'];
-    if (!auth?.startsWith('Bearer ')) throw new UnauthorizedException();
-
     const { access_token, refresh_token, consent_required } =
-      await this.authService.login(auth);
+      await this.authService.login(user);
     res.cookie('refresh_token', refresh_token, {
       httpOnly: true,
       secure: true,
@@ -81,8 +76,8 @@ export class AuthController {
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
   @Post('refresh')
-  async refreshToken(@Req() req: Request): Promise<JwtToken> {
-    const refreshToken = req.cookies['refresh_token'];
+  async refreshToken(@Req() req: express.Request): Promise<JwtToken> {
+    const refreshToken = req.cookies['refresh_token'] as string | undefined;
     if (!refreshToken) throw new UnauthorizedException();
     const { access_token, consent_required } =
       await this.authService.refresh(refreshToken);
@@ -100,31 +95,11 @@ export class AuthController {
   @Post('logout')
   @UseGuards(JwtGuard)
   async logout(
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
+    @Req() req: express.Request,
+    @Res({ passthrough: true }) res: express.Response,
   ): Promise<void> {
-    const refreshToken = req.cookies['refresh_token'];
+    const refreshToken = req.cookies['refresh_token'] as string;
     res.clearCookie('refresh_token');
     return this.authService.logout(refreshToken);
-  }
-
-  @ApiOperation({
-    summary: '뻔라인스케이트 회원가입',
-    description:
-      'register user with selection informationwith consent for personal data provision (필수 정보는 로그인할 때 idp에서 받아와서 선택정보랑 동의 여부만 true로 바꿈)',
-  })
-  @ApiOkResponse({
-    type: BbunUserResDto,
-    description: 'register user is completed, and send email to bbunline',
-  })
-  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
-  @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
-  @Patch('register')
-  @UseGuards(JwtGuard)
-  async registerUser(
-    @GetUser() user: UserInfo,
-    @Body() selection_info: registerUserDto,
-  ): Promise<BbunUserResDto> {
-    return this.authService.registerUser(user, selection_info);
   }
 }

@@ -35,4 +35,27 @@ export class AuthRepository {
         throw new InternalServerErrorException('Unknown Error');
       });
   }
+
+  async updateUserBasicInfo(
+    uuid: string,
+    {
+      name,
+      studentNumber,
+      email,
+      profileImageUrl,
+    }: Pick<
+      Prisma.UserModel,
+      'name' | 'studentNumber' | 'email' | 'profileImageUrl'
+    >,
+  ): Promise<Prisma.UserModel> {
+    return this.prismaService.user.update({
+      where: { uuid },
+      data: {
+        name,
+        studentNumber,
+        email,
+        profileImageUrl,
+      },
+    });
+  }
 }

@@ -36,10 +36,22 @@ export class AuthService {
    * @param param0 IdTokenPayloadType
    * @returns accessToken, refreshToken and the information that is  the user consent required
    */
-  async login({ sub }: IdTokenPayloadType): Promise<JwtTokenType> {
+  async login({
+    sub,
+    name,
+    student_id,
+    email,
+    picture,
+  }: IdTokenPayloadType): Promise<JwtTokenType> {
     const user = await this.authRepository.findUserByUuid(sub);
+    await this.authRepository.updateUserBasicInfo(sub, {
+      name,
+      studentNumber: student_id,
+      email,
+      profileImageUrl: picture,
+    });
     const tokens = await this.issueTokens(user.uuid);
-    return { ...tokens, consent_required: user.isBbunRegistered };
+    return { ...tokens, consent_required: user.consent };
   }
 
   /**
@@ -64,7 +76,7 @@ export class AuthService {
     return {
       access_token,
       refresh_token,
-      consent_required: user.isBbunRegistered,
+      consent_required: user.consent,
     };
   }
 

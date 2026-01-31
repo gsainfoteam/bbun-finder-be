@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import {
+  ApiBearerAuth,
   ApiInternalServerErrorResponse,
   ApiOAuth2,
   ApiOkResponse,
@@ -18,12 +19,16 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { UserRegistrationDto } from './dto/res/userInfoRes.dto';
-import { UpdateUserDto } from './dto/req/updateUser.dto';
-import { BbunUserResDto, BbunUserResListDto } from './dto/res/bbunUser.dto';
+import { JwtGuard } from 'src/auth/guards/jwt.guard';
+import { GetUser } from 'src/auth/decorators/getUser.decorator';
+import { InfoteamAccountGuard } from 'src/auth/guards/InfoteamAccount.guard';
+import { GetInfoteamAccountUser } from 'src/auth/decorators/getInfoteamAccountUser.decorator';
+import * as infoteamAccount from '@lib/infoteam-account';
+import { Prisma } from 'generated/prisma/client';
+import { UserResDto } from './dto/res/userRes.dto';
+import { UpdateDataDto } from './dto/req/updateData.dto';
 
 @ApiTags('user')
-@ApiOAuth2(['openid', 'email', 'profile', 'student_'], 'oauth2')
 @Controller('user')
 @UsePipes(ValidationPipe)
 export class UserController {
@@ -33,54 +38,30 @@ export class UserController {
     summary: '뻔라인스케이트 회원가입',
     description: 'register Bbun user',
   })
+  @ApiOAuth2(['email', 'profile', 'openid'], 'oauth2')
   @ApiOkResponse({ description: 'user registration completed' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
   @Post('')
-  async registerUser(): Promise<UserRegistrationDto> {
-    return await this.userService.registerUser();
-  }
-
-  @ApiOperation({
-    summary: '뻔라인스케이트 회원탈퇴',
-    description: 'delete Bbun user',
-  })
-  @ApiOkResponse({ description: 'delete user completed' })
-  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
-  @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
-  @Delete('')
-  @UseGuards(JwtGuard)
-  async deleteUser(@GetUser() user: UserInfo): Promise<UserRegistrationDto> {
-    return await this.userService.deleteUser(user);
+  @UseGuards(InfoteamAccountGuard)
+  async registerUser(
+    @GetInfoteamAccountUser() user: infoteamAccount.IdTokenPayloadType,
+  ): Promise<void> {
+    return await this.userService.registerUser(user);
   }
 
   @ApiOperation({
     summary: '유저 자기자신의 정보 조회',
-    description: "get bbunlineskate use's own information ",
+    description: "get bbunlineskate user's own information ",
   })
-  @ApiOkResponse({ type: BbunUserResDto, description: 'Return user info' })
+  @ApiBearerAuth('jwt')
+  @ApiOkResponse({ type: UserResDto, description: 'Return user info' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
   @Get('')
   @UseGuards(JwtGuard)
-  async getUserInfoBbun(@GetUser() user: UserInfo): Promise<BbunUserResDto> {
-    return await this.userService.getUserInfoBbun(user);
-  }
-
-  @ApiOperation({
-    summary: '유저의 뻔라인 조회',
-    description:
-      'get users with the same last four digits of their student ID(including the user himself)',
-  })
-  @ApiOkResponse({ type: BbunUserResDto, description: 'Return users info' })
-  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
-  @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
-  @Get('bbunline')
-  @UseGuards(JwtGuard)
-  async findBbunUserWithStudentNumber(
-    @GetUser() user: UserInfo,
-  ): Promise<BbunUserResListDto> {
-    return await this.userService.findUserByMatchingSN(user.studentNumber);
+  getUserInfoBbun(@GetUser() user: Prisma.UserModel): UserResDto {
+    return user;
   }
 
   @ApiOperation({
@@ -88,15 +69,33 @@ export class UserController {
     description:
       'update selection information(all information except data from IdP)',
   })
-  @ApiOkResponse({ description: 'update user info and return it' })
+  @ApiBearerAuth('jwt')
+  @ApiOkResponse({
+    type: UserResDto,
+    description: 'update user info and return it',
+  })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
   @Patch('')
   @UseGuards(JwtGuard)
   async updateUserInfo(
-    @GetUser() user: UserInfo,
-    @Body() selection_info: UpdateUserDto,
-  ): Promise<BbunUserResDto> {
-    return this.userService.updateUserInfo(user.studentNumber, selection_info);
+    @GetUser() user: Prisma.UserModel,
+    @Body() selection_info: UpdateDataDto,
+  ): Promise<UserResDto> {
+    return this.userService.updateUserInfo(user.uuid, selection_info);
+  }
+
+  @ApiOperation({
+    summary: '뻔라인스케이트 회원탈퇴',
+    description: 'delete Bbun user',
+  })
+  @ApiBearerAuth('jwt')
+  @ApiOkResponse({ description: 'delete user completed' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
+  @Delete('')
+  @UseGuards(JwtGuard)
+  async deleteUser(@GetUser() user: Prisma.UserModel): Promise<void> {
+    return await this.userService.deleteUser(user);
   }
 }

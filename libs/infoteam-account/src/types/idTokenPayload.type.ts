@@ -8,7 +8,7 @@ export type IdTokenPayloadType = {
   nonce: string; // nonce value
 
   // custom claims of user's information
-  profile: string | null; // user's profile image
+  picture: string | null; // user's profile image
   name: string;
   email: string;
   student_id: string;

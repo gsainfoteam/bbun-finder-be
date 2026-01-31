@@ -5,9 +5,8 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider     = "prisma-client"
-  output       = "../generated/prisma"
-  moduleFormat = "cjs"
+  provider = "prisma-client"
+  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -15,21 +14,20 @@ datasource db {
 }
 
 model User {
-  uuid          String    @id @db.Uuid
-  name          String //이름
-  studentNumber String    @unique @map("student_number") //학번
-  email         String    @unique //이메일
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
-  deletedAt     DateTime? @map("deleted_at")
+  uuid            String    @id @db.Uuid
+  name            String //이름
+  studentNumber   String    @unique @map("student_number") //학번
+  email           String    @unique //이메일
+  profileImageUrl String?   @map("profile_image_url") //프로필 이미지 URL
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+  consent         Boolean   @default(false) //개인정보 수집 동의 여부
 
-  isBbunRegistered Boolean @default(false) @map("is_bbun_registered") //BBun 등록 여부
-  department       String? @map("department") //학과
-  MBTI             String? @map("mbti") //MBTI
-  instaId          String? @map("insta_id") //인스타 아이디
-  description      String? @map("description") //짧은 소개
-
-  profileImageUrl String? @map("profile_image_url") //프로필 이미지 URL
+  department  String? @map("department") //학과
+  MBTI        String? @map("mbti") //MBTI
+  instaId     String? @map("insta_id") //인스타 아이디
+  description String? @map("description") //짧은 소개
 
   @@map("user")
 }

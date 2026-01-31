@@ -14,7 +14,7 @@ export class RedisService implements OnModuleDestroy {
     this.redisClient = new Redis(customConfigService.REDIS_URL);
   }
 
-  async ping(): Promise<'PONG'> {
+  ping(): Promise<'PONG'> {
     return this.redisClient.ping();
   }
 

@@ -15,7 +15,7 @@ export class InfoteamAccountStrategy extends PassportStrategy(
   }
 
   async validate(token: string): Promise<IdTokenPayloadType> {
-    return this.authService.validateIdToken(token).catch((err) => {
+    return await this.authService.validateIdToken(token).catch((err) => {
       this.logger.debug(err);
       throw new UnauthorizedException('Invalid ID Token');
     });

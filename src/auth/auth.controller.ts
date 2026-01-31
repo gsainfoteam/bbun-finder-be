@@ -46,12 +46,12 @@ export class AuthController {
     summary: 'Login',
     description: 'Issue JWT token(bbunline) for user',
   })
+  @ApiOAuth2(['email', 'profile', 'openid'], 'oauth2')
   @ApiOkResponse({ description: 'Return jwt token' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
-  @ApiOAuth2(['email', 'profile', 'openid'], 'oauth2')
-  @UseGuards(InfoteamAccountGuard)
   @Post('login')
+  @UseGuards(InfoteamAccountGuard)
   async login(
     @GetInfoteamAccountUser() user: infoteamAccount.IdTokenPayloadType,
     @Res({ passthrough: true }) res: express.Response,
@@ -72,6 +72,7 @@ export class AuthController {
     summary: 'Refresh token',
     description: 'Refresh the access token from idp',
   })
+  @ApiBearerAuth('jwt')
   @ApiCreatedResponse({ type: JwtToken, description: 'Return jwt token' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
@@ -88,6 +89,7 @@ export class AuthController {
     summary: 'Logout',
     description: 'Logout the user from the cookie and idp',
   })
+  @ApiBearerAuth('jwt')
   @ApiCreatedResponse({ description: 'Return jwt token' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })

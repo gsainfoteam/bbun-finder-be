@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -73,6 +74,11 @@ export class UserRepository {
       })
       .catch((err) => {
         if (err instanceof Prisma.PrismaClientKnownRequestError) {
+          if (err.code === 'P2002') {
+            this.logger.error('createUser Error');
+            this.logger.debug('Unique constraint failed');
+            throw new ConflictException('User already exists');
+          }
           this.logger.error('createUser Error');
           this.logger.debug(err);
           throw new InternalServerErrorException('Database Error');

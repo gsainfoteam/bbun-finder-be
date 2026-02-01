@@ -27,7 +27,7 @@ async function bootstrap() {
   // set CORS config
   const whitelist = [
     /http:\/\/localhost:3000/,
-    /http:\/\/localhost:12345/,
+    /http:\/\/localhost:5173/,
     /https:\/\/.*bbun.gistory.me/,
     /https:\/\/bbun.gistory.me/,
     /https:\/\/.*bbun-fe.pages.dev/,

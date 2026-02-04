@@ -1,5 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsOptional, IsString, MaxLength, IsEnum } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { Department, Mbti } from 'generated/prisma/enums';
 
 export class UpdateDataDto {
   @ApiProperty({
@@ -8,8 +10,9 @@ export class UpdateDataDto {
     required: false,
   })
   @IsOptional()
-  @IsString()
-  department?: string;
+  @Transform(({ value }) => normalizeOptionalEnum(value))
+  @IsEnum(Department)
+  department?: Department;
 
   @ApiProperty({
     description: 'User MBTI',
@@ -17,8 +20,9 @@ export class UpdateDataDto {
     required: false,
   })
   @IsOptional()
-  @IsString()
-  MBTI?: string;
+  @Transform(({ value }) => normalizeOptionalEnum(value))
+  @IsEnum(Mbti)
+  MBTI?: Mbti;
 
   @ApiProperty({
     description: 'User insta ID',
@@ -39,4 +43,14 @@ export class UpdateDataDto {
   @MaxLength(300, { message: '자기소개는 최대 300자까지 입력할 수 있습니다.' })
   @IsString()
   description?: string;
+}
+
+function normalizeOptionalEnum(v: unknown) {
+  if (v === null || v === undefined) return undefined;
+  if (typeof v !== 'string') return v;
+
+  const s = v.trim();
+  if (!s || s === '선택해주세요') return undefined;
+
+  return s.toUpperCase();
 }

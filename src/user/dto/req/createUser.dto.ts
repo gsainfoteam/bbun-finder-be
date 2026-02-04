@@ -1,48 +1,28 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, Length, MaxLength } from 'class-validator';
-
-export class CreateTempUserDto {
-  @ApiProperty({
-    description: 'User name',
-    example: 'John Doe',
-  })
-  @IsString()
-  name: string;
-
-  @ApiProperty({
-    description: 'User email id',
-    example: 'johnDoe@gm.gist.ac.kr',
-  })
-  @IsString()
-  email: string;
-
-  @ApiProperty({
-    description: 'Student number',
-    example: '20212345',
-  })
-  @IsString()
-  @Length(8, 8, { message: '학번은 정확히 8자리여야 합니다.' })
-  studentNumber: string;
-}
+import { Transform } from 'class-transformer';
+import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
+import { Department, Mbti } from 'generated/prisma/enums';
 
 export class registerUserDto {
   @ApiProperty({
     description: 'User department',
-    example: '기초교육학부',
+    example: 'GS, EC와 같은 해당 전공의 전공과목 코드',
     required: false,
   })
   @IsOptional()
-  @IsString()
-  department?: string;
+  @Transform(({ value }) => normalizeOptionalEnum(value))
+  @IsEnum(Department)
+  department?: Department;
 
   @ApiProperty({
     description: 'User MBTI',
-    example: 'ENFJ',
+    example: 'ENFJ(대문자)',
     required: false,
   })
   @IsOptional()
-  @IsString()
-  MBTI?: string;
+  @Transform(({ value }) => normalizeOptionalEnum(value))
+  @IsEnum(Mbti)
+  MBTI?: Mbti;
 
   @ApiProperty({
     description: 'User insta ID',
@@ -63,4 +43,14 @@ export class registerUserDto {
   @MaxLength(300, { message: '자기소개는 최대 300자까지 입력할 수 있습니다.' })
   @IsString()
   description?: string;
+}
+
+function normalizeOptionalEnum(v: unknown) {
+  if (v === null || v === undefined) return undefined;
+  if (typeof v !== 'string') return v;
+
+  const s = v.trim();
+  if (!s || s === '선택해주세요') return undefined;
+
+  return s.toUpperCase();
 }

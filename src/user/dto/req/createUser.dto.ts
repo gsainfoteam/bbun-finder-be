@@ -1,5 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, Length, MaxLength } from 'class-validator';
+import {
+  IsEnum,
+  IsOptional,
+  IsString,
+  Length,
+  MaxLength,
+} from 'class-validator';
+import { Department, Mbti } from 'generated/prisma/enums';
 
 export class CreateTempUserDto {
   @ApiProperty({
@@ -33,6 +40,7 @@ export class registerUserDto {
   })
   @IsOptional()
   @IsString()
+  @IsEnum(Department)
   department?: string;
 
   @ApiProperty({
@@ -42,7 +50,8 @@ export class registerUserDto {
   })
   @IsOptional()
   @IsString()
-  MBTI?: string;
+  @IsEnum(Mbti)
+  MBTI?: Mbti;
 
   @ApiProperty({
     description: 'User insta ID',

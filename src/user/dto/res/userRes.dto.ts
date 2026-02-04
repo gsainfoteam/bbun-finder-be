@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Prisma } from 'generated/prisma/client';
+import { Department, Mbti, Prisma } from 'generated/prisma/client';
 
 export class UserResDto implements Prisma.UserModel {
   @ApiProperty({
@@ -53,13 +53,13 @@ export class UserResDto implements Prisma.UserModel {
     description: 'user department',
     example: '기초교육학부',
   })
-  department: string | null;
+  department: Department | null;
 
   @ApiPropertyOptional({
     description: 'user MBTI',
     example: 'INTJ',
   })
-  MBTI: string | null;
+  MBTI: Mbti | null;
 
   @ApiPropertyOptional({
     description: 'user insta ID',

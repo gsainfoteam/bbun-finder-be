@@ -13,9 +13,42 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Mbti {
+  INFJ
+  ENFJ
+  INTJ
+  ENTJ
+  INFP
+  ENFP
+  INTP
+  ENTP
+  ISFJ
+  ESFJ
+  ISTJ
+  ESTJ
+  ISFP
+  ESFP
+  ISTP
+  ESTP
+}
+
+enum Department {
+  EC     // 전기전자컴퓨터공학과
+  SE     // 반도체공학과
+  AI     // AI융합학과
+  PS     // 물리광과학과
+  CH     // 화학과
+  MM     // 수리과학과
+  MA     // 신소재공학과
+  MC     // 기계로봇공학과
+  EV     // 환경에너지공학과
+  BS     // 생명과학과
+  GS     // 도전탐색과정
+}
+
 model User {
   uuid            String    @id @db.Uuid
-  name            String //이름
+  name            String    //이름
   studentNumber   String    @unique @map("student_number") //학번
   email           String    @unique //이메일
   profileImageUrl String?   @map("profile_image_url") //프로필 이미지 URL
@@ -24,8 +57,8 @@ model User {
   deletedAt       DateTime? @map("deleted_at")
   consent         Boolean   @default(false) //개인정보 수집 동의 여부
 
-  department  String? @map("department") //학과
-  MBTI        String? @map("mbti") //MBTI
+  department  Department? @map("department") //학과
+  MBTI        Mbti? @map("mbti") //MBTI
   instaId     String? @map("insta_id") //인스타 아이디
   description String? @map("description") //짧은 소개
 

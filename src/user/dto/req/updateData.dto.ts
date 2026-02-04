@@ -52,5 +52,5 @@ function normalizeOptionalEnum(v: unknown) {
   const s = v.trim();
   if (!s || s === '선택해주세요') return undefined;
 
-  return s.toUpperCase(); // MBTI는 대문자 정규화에 도움
+  return s.toUpperCase();
 }

@@ -12,7 +12,7 @@ export class EmailService {
 
   async sendEmailBbunline(emailList: string[]): Promise<void> {
     if (emailList.length === 0) {
-      this.logger.log('No matching users to sned email.');
+      this.logger.log('No matching users to send email.');
       return;
     }
 

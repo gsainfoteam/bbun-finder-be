@@ -1,5 +1,6 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import {
+  ApiBearerAuth,
   ApiInternalServerErrorResponse,
   ApiOkResponse,
   ApiOperation,
@@ -22,6 +23,7 @@ export class BbunController {
     description:
       'get users with the same last four digits of their student ID(including the user himself)',
   })
+  @ApiBearerAuth('jwt')
   @ApiOkResponse({ type: UserListResDto, description: 'Return users info' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })

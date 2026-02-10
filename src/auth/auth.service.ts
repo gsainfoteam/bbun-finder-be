@@ -43,7 +43,7 @@ export class AuthService {
     email,
     picture,
   }: IdTokenPayloadType): Promise<JwtTokenType> {
-    const user = await this.authRepository.findUserByUuid(sub);
+    const user = await this.authRepository.findExistUserByUuid(sub);
     await this.authRepository.updateUserBasicInfo(sub, {
       name,
       studentNumber: student_id,
@@ -68,7 +68,7 @@ export class AuthService {
       .catch(() => {
         throw new UnauthorizedException('Invalid refresh token');
       });
-    const user = await this.authRepository.findUserByUuid(uuid);
+    const user = await this.authRepository.findExistUserByUuid(uuid);
     await this.redisService.del(refreshToken, {
       prefix: this.refreshTokenPrefix,
     });
@@ -97,7 +97,7 @@ export class AuthService {
   }
 
   async findUserByUuid(uuid: string): Promise<Prisma.UserModel> {
-    return await this.authRepository.findUserByUuid(uuid);
+    return await this.authRepository.findExistUserByUuid(uuid);
   }
 
   private generateOpaqueToken() {

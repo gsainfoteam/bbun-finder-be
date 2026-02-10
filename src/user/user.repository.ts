@@ -61,6 +61,23 @@ export class UserRepository {
     email,
     student_id,
   }: IdTokenPayloadType): Promise<Prisma.UserModel> {
+    // soft delete 된 유저가 다시 가입하는 경우 복구 처리
+    const user = await this.prismaService.user.findUnique({
+      where: { uuid: sub },
+    });
+    if (user) {
+      return this.prismaService.user.update({
+        where: { uuid: sub },
+        data: {
+          deletedAt: null,
+          consent: true,
+          profileImageUrl: picture,
+          name,
+          email,
+          studentNumber: student_id,
+        },
+      });
+    }
     return await this.prismaService.user
       .create({
         data: {
@@ -96,7 +113,7 @@ export class UserRepository {
   }: Pick<Prisma.UserModel, 'uuid' | 'consent'>): Promise<void> {
     await this.prismaService.user
       .update({
-        where: { uuid },
+        where: { uuid, deletedAt: null },
         data: { consent },
       })
       .catch((err) => {
@@ -118,7 +135,7 @@ export class UserRepository {
   ): Promise<Prisma.UserModel> {
     return await this.prismaService.user
       .update({
-        where: { uuid },
+        where: { uuid, deletedAt: null },
         data: updateData,
       })
       .catch((err) => {

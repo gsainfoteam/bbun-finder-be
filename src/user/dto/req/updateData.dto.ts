@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, MaxLength, IsEnum } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  MaxLength,
+  IsEnum,
+  IsBoolean,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
 import { Department, Mbti } from 'generated/prisma/enums';
 
@@ -47,6 +53,15 @@ export class UpdateDataDto {
   @MaxLength(300, { message: '자기소개는 최대 300자까지 입력할 수 있습니다.' })
   @IsString()
   description?: string;
+
+  @ApiProperty({
+    description: 'User consent for service usage',
+    example: true,
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  consent?: boolean;
 }
 
 function normalizeOptionalEnum(v: unknown) {

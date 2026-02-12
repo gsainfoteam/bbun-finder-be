@@ -70,7 +70,7 @@ export class UserRepository {
         where: { uuid: sub },
         data: {
           deletedAt: null,
-          consent: true,
+          consent: false,
           profileImageUrl: picture,
           name,
           email,
@@ -106,37 +106,15 @@ export class UserRepository {
       });
   }
 
-  //등록 상태 변경(isBbunRegistered), 동의/ 비동의 여부
-  async updateIsBbunRegistered({
-    uuid,
-    consent,
-  }: Pick<Prisma.UserModel, 'uuid' | 'consent'>): Promise<void> {
-    await this.prismaService.user
-      .update({
-        where: { uuid, deletedAt: null },
-        data: { consent },
-      })
-      .catch((err) => {
-        if (err instanceof Prisma.PrismaClientKnownRequestError) {
-          this.logger.error('updateIsBbunRegistered Error');
-          this.logger.debug(err);
-          throw new InternalServerErrorException('Database Error');
-        }
-        this.logger.error('updateIsBbunRegistered Error');
-        this.logger.debug(err);
-        throw new InternalServerErrorException('Unknown Error');
-      });
-  }
-
   //사용자 정보 업데이트(선택적 필드 업데이트)
   async updateUserInfo(
     uuid: string,
-    updateData: UpdateDataDto,
+    { department, MBTI, instaId, description, consent }: UpdateDataDto,
   ): Promise<Prisma.UserModel> {
     return await this.prismaService.user
       .update({
         where: { uuid, deletedAt: null },
-        data: updateData,
+        data: { department, MBTI, instaId, description, consent },
       })
       .catch((err) => {
         if (err instanceof Prisma.PrismaClientKnownRequestError) {

@@ -35,7 +35,14 @@ import * as path from 'path';
         },
 
         template: {
-          dir: path.resolve(__dirname, '..', 'libs', 'email', 'templates'),
+          dir: path.resolve(
+            __dirname,
+            '..',
+            'libs',
+            'email',
+            'src',
+            'templates',
+          ),
           adapter: new HandlebarsAdapter(),
           options: {
             strict: true,

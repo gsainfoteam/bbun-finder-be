@@ -1,3 +1,26 @@
+-- CreateEnum
+DO $$
+BEGIN
+  CREATE TYPE "Mbti" AS ENUM (
+    'INFJ','ENFJ','INTJ','ENTJ',
+    'INFP','ENFP','INTP','ENTP',
+    'ISFJ','ESFJ','ISTJ','ESTJ',
+    'ISFP','ESFP','ISTP','ESTP'
+  );
+EXCEPTION
+  WHEN duplicate_object THEN
+    -- type already exists, ignore
+    NULL;
+END $$;
+
+DO $$
+BEGIN
+  CREATE TYPE "Department" AS ENUM ('EC','SE','AI','PS','CH','MM','MA','MC','EV','BS','GS');
+EXCEPTION
+  WHEN duplicate_object THEN
+    NULL;
+END $$;
+
 -- CreateTable
 CREATE TABLE "user" (
     "uuid" UUID NOT NULL,
@@ -9,8 +32,8 @@ CREATE TABLE "user" (
     "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "deleted_at" TIMESTAMP(3),
     "consent" BOOLEAN NOT NULL DEFAULT false,
-    "department" TEXT,
-    "mbti" TEXT,
+    "department" "Department",
+    "mbti" "Mbti",
     "insta_id" TEXT,
     "description" TEXT,
 

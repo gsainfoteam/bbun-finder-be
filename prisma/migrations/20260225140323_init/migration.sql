@@ -1,8 +1,25 @@
 -- CreateEnum
-CREATE TYPE "Mbti" AS ENUM ('INFJ', 'ENFJ', 'INTJ', 'ENTJ', 'INFP', 'ENFP', 'INTP', 'ENTP', 'ISFJ', 'ESFJ', 'ISTJ', 'ESTJ', 'ISFP', 'ESFP', 'ISTP', 'ESTP');
+DO $$
+BEGIN
+  CREATE TYPE "Mbti" AS ENUM (
+    'INFJ','ENFJ','INTJ','ENTJ',
+    'INFP','ENFP','INTP','ENTP',
+    'ISFJ','ESFJ','ISTJ','ESTJ',
+    'ISFP','ESFP','ISTP','ESTP'
+  );
+EXCEPTION
+  WHEN duplicate_object THEN
+    -- type already exists, ignore
+    NULL;
+END $$;
 
--- CreateEnum
-CREATE TYPE "Department" AS ENUM ('EC', 'SE', 'AI', 'PS', 'CH', 'MM', 'MA', 'MC', 'EV', 'BS', 'GS');
+DO $$
+BEGIN
+  CREATE TYPE "Department" AS ENUM ('EC','SE','AI','PS','CH','MM','MA','MC','EV','BS','GS');
+EXCEPTION
+  WHEN duplicate_object THEN
+    NULL;
+END $$;
 
 -- CreateTable
 CREATE TABLE "user" (

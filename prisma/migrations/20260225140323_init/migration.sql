@@ -1,3 +1,9 @@
+-- CreateEnum
+CREATE TYPE "Mbti" AS ENUM ('INFJ', 'ENFJ', 'INTJ', 'ENTJ', 'INFP', 'ENFP', 'INTP', 'ENTP', 'ISFJ', 'ESFJ', 'ISTJ', 'ESTJ', 'ISFP', 'ESFP', 'ISTP', 'ESTP');
+
+-- CreateEnum
+CREATE TYPE "Department" AS ENUM ('EC', 'SE', 'AI', 'PS', 'CH', 'MM', 'MA', 'MC', 'EV', 'BS', 'GS');
+
 -- CreateTable
 CREATE TABLE "user" (
     "uuid" UUID NOT NULL,
@@ -9,8 +15,8 @@ CREATE TABLE "user" (
     "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "deleted_at" TIMESTAMP(3),
     "consent" BOOLEAN NOT NULL DEFAULT false,
-    "department" TEXT,
-    "mbti" TEXT,
+    "department" "Department",
+    "mbti" "Mbti",
     "insta_id" TEXT,
     "description" TEXT,
 

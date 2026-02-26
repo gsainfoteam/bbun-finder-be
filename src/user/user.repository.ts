@@ -86,7 +86,7 @@ export class UserRepository {
           name,
           email,
           studentNumber: student_id,
-          consent: true,
+          consent: false,
         },
       })
       .catch((err) => {

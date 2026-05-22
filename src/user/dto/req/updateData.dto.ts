@@ -7,7 +7,7 @@ import {
   IsBoolean,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { Department, Mbti } from 'generated/prisma/enums';
+import { Department, Mbti } from '../../../../generated/prisma/enums';
 
 export class UpdateDataDto {
   @ApiProperty({

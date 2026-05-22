@@ -19,12 +19,12 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { JwtGuard } from 'src/auth/guards/jwt.guard';
-import { GetUser } from 'src/auth/decorators/getUser.decorator';
-import { InfoteamAccountGuard } from 'src/auth/guards/InfoteamAccount.guard';
-import { GetInfoteamAccountUser } from 'src/auth/decorators/getInfoteamAccountUser.decorator';
+import { JwtGuard } from '../auth/guards/jwt.guard';
+import { GetUser } from '../auth/decorators/getUser.decorator';
+import { InfoteamAccountGuard } from '../auth/guards/InfoteamAccount.guard';
+import { GetInfoteamAccountUser } from '../auth/decorators/getInfoteamAccountUser.decorator';
 import * as infoteamAccount from '@lib/infoteam-account';
-import { Prisma } from 'generated/prisma/client';
+import { Prisma } from '../../generated/prisma/client';
 import { UserResDto } from './dto/res/userRes.dto';
 import { UpdateDataDto } from './dto/req/updateData.dto';
 

@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
-import { Department, Mbti } from 'generated/prisma/enums';
+import { Department, Mbti } from '../../../../generated/prisma/enums';
 
 export class registerUserDto {
   @ApiProperty({

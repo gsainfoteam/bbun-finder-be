@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { UserResDto } from 'src/user/dto/res/userRes.dto';
-import { UserRepository } from 'src/user/user.repository';
+import { UserResDto } from '../user/dto/res/userRes.dto';
+import { UserRepository } from '../user/user.repository';
 
 @Injectable()
 export class BbunService {

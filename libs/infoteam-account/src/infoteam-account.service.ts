@@ -12,7 +12,7 @@ export class InfoteamAccountService implements OnModuleInit {
     timestamp: true,
   });
   private readonly InfoteamAccountBaseUrl: string;
-  private InfoteamAccountPublicKey: Buffer;
+  private InfoteamAccountPublicKey!: Buffer;
 
   constructor(
     private readonly httpService: HttpService,

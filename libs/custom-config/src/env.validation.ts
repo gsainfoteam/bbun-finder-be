@@ -4,91 +4,91 @@ import { IsNotEmpty, IsString, validateSync } from 'class-validator';
 export class EnvironmentVariables {
   @IsString()
   @IsNotEmpty()
-  INFOTEAM_ACCOUNT_BASE_URL: string;
+  INFOTEAM_ACCOUNT_BASE_URL!: string;
 
   @IsString()
   @IsNotEmpty()
-  DATABASE_URL: string;
+  DATABASE_URL!: string;
 
   @IsString()
   @IsNotEmpty()
-  SWAGGER_USER: string;
+  SWAGGER_USER!: string;
 
   @IsString()
   @IsNotEmpty()
-  SWAGGER_PASSWORD: string;
+  SWAGGER_PASSWORD!: string;
 
   @IsString()
   @IsNotEmpty()
-  SWAGGER_AUTH_URL: string;
+  SWAGGER_AUTH_URL!: string;
 
   @IsString()
   @IsNotEmpty()
-  SWAGGER_TOKEN_URL: string;
+  SWAGGER_TOKEN_URL!: string;
 
   @IsString()
   @IsNotEmpty()
-  CLIENT_ID: string;
+  CLIENT_ID!: string;
 
   @IsString()
   @IsNotEmpty()
-  CLIENT_SECRET: string;
+  CLIENT_SECRET!: string;
 
   @IsString()
   @IsNotEmpty()
-  API_URL: string;
+  API_URL!: string;
 
   @IsString()
   @IsNotEmpty()
-  API_VERSION: string;
+  API_VERSION!: string;
 
   @IsString()
   @IsNotEmpty()
-  EMAIL_USER: string;
+  EMAIL_USER!: string;
 
   @IsString()
   @IsNotEmpty()
-  EMAIL_PORT: string;
+  EMAIL_PORT!: string;
 
   @IsString()
   @IsNotEmpty()
-  EMAIL_HOST: string;
+  EMAIL_HOST!: string;
 
   @IsString()
   @IsNotEmpty()
-  EMAIL_ACCESS_URL: string;
+  EMAIL_ACCESS_URL!: string;
 
   @IsString()
   @IsNotEmpty()
-  EMAIL_SERVICE_CLIENT: string;
+  EMAIL_SERVICE_CLIENT!: string;
 
   @IsString()
   @IsNotEmpty()
-  EMAIL_PRIVATE_KEY: string;
+  EMAIL_PRIVATE_KEY!: string;
 
   @IsString()
   @IsNotEmpty()
-  JWT_SECRET: string;
+  JWT_SECRET!: string;
 
   @IsString()
   @IsNotEmpty()
-  JWT_ISSUER: string;
+  JWT_ISSUER!: string;
 
   @IsString()
   @IsNotEmpty()
-  JWT_AUDIENCE: string;
+  JWT_AUDIENCE!: string;
 
   @IsString()
   @IsNotEmpty()
-  JWT_EXPIRE: string;
+  JWT_EXPIRE!: string;
 
   @IsString()
   @IsNotEmpty()
-  REFRESH_TOKEN_EXPIRE: string;
+  REFRESH_TOKEN_EXPIRE!: string;
 
   @IsString()
   @IsNotEmpty()
-  REDIS_URL: string;
+  REDIS_URL!: string;
 }
 
 export type EnvironmentVariableKeys = keyof EnvironmentVariables;

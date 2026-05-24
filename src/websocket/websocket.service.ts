@@ -2,9 +2,18 @@ import { Injectable } from '@nestjs/common';
 import { WsException } from '@nestjs/websockets';
 import type WebSocket from 'ws';
 import { randomUUID } from 'node:crypto';
-import { BbunWsClient } from './websocket.client';
+import { AuthorizeClientParams, BbunWsClient } from './websocket.client';
 import { WsBaseDto } from './dto/ws-base.dto';
 import { WsAuthorizationReqDto } from './dto/ws-authorization.dto';
+
+type CheckClientResult = {
+  client: BbunWsClient;
+  needAuthorization: boolean;
+};
+
+type BroadcastOptions = {
+  excludeUserUuids?: string[];
+};
 
 @Injectable()
 export class WebsocketService {
@@ -13,14 +22,14 @@ export class WebsocketService {
   private readonly clients = new Map<WebSocket, BbunWsClient>();
   private readonly roomClients = new Map<string, Set<BbunWsClient>>();
 
-  addClient(wsClient: WebSocket) {
+  addClient(wsClient: WebSocket): void {
     const client = new BbunWsClient(wsClient);
-    this.clients.set(wsClient, client);
 
+    this.clients.set(wsClient, client);
     this.sendAuthorizationRequest(client);
   }
 
-  deleteClient(wsClient: WebSocket) {
+  deleteClient(wsClient: WebSocket): void {
     const client = this.clients.get(wsClient);
 
     if (client) {
@@ -30,7 +39,7 @@ export class WebsocketService {
     this.clients.delete(wsClient);
   }
 
-  getClientOrThrow(wsClient: WebSocket) {
+  getClientOrThrow(wsClient: WebSocket): BbunWsClient {
     const client = this.clients.get(wsClient);
 
     if (!client) {
@@ -40,10 +49,7 @@ export class WebsocketService {
     return client;
   }
 
-  checkIfValidClient(wsClient: WebSocket): {
-    client: BbunWsClient;
-    needAuthorization: boolean;
-  } {
+  checkIfValidClient(wsClient: WebSocket): CheckClientResult {
     const client = this.getClientOrThrow(wsClient);
 
     if (!client.getIsAuthorized()) {
@@ -68,23 +74,9 @@ export class WebsocketService {
     };
   }
 
-  authorizeClient(
-    client: BbunWsClient,
-    params: {
-      userUuid: string;
-      userName: string;
-      studentNumber: string;
-      profileImageUrl: string | null;
-      roomUuid: string;
-      lineKey: string;
-      accessToken: string;
-      validUntil: Date;
-    },
-  ) {
+  authorizeClient(client: BbunWsClient, params: AuthorizeClientParams): void {
     this.leaveRoom(client);
-
     client.setAuthorized(params);
-
     this.joinRoom(client, params.roomUuid);
   }
 
@@ -95,16 +87,18 @@ export class WebsocketService {
 
     client.setNeedAuthorizationUntil(authorizationUntil);
 
-    client.sendMessage(
-      {
-        type: 'request_authorization',
-        request_id: randomUUID(),
-        body: {
-          authorization_until: authorizationUntil,
-        } satisfies WsAuthorizationReqDto,
+    const authorizationReq: WsBaseDto<
+      WsAuthorizationReqDto,
+      'request_authorization'
+    > = {
+      type: 'request_authorization',
+      request_id: randomUUID(),
+      body: {
+        authorization_until: authorizationUntil,
       },
-      true,
-    );
+    };
+
+    client.sendMessage(authorizationReq, true);
 
     setTimeout(() => {
       if (!client.getIsAuthorized()) {
@@ -113,17 +107,15 @@ export class WebsocketService {
     }, this.AUTHORIZATION_TIMEOUT_MS + 5000);
   }
 
-  broadcastToRoom(
+  broadcastToRoom<TBody>(
     roomUuid: string,
-    message: WsBaseDto<any>,
-    options?: {
-      excludeUserUuids?: string[];
-    },
-  ) {
+    message: WsBaseDto<TBody>,
+    options: BroadcastOptions = {},
+  ): void {
     const roomSet = this.roomClients.get(roomUuid);
     if (!roomSet) return;
 
-    const excludeUserUuidSet = new Set(options?.excludeUserUuids ?? []);
+    const excludeUserUuidSet = new Set(options.excludeUserUuids ?? []);
 
     for (const receiver of roomSet) {
       if (!receiver.getIsAuthorized()) continue;
@@ -138,15 +130,14 @@ export class WebsocketService {
     }
   }
 
-  private joinRoom(client: BbunWsClient, roomUuid: string) {
+  private joinRoom(client: BbunWsClient, roomUuid: string): void {
     const roomSet = this.roomClients.get(roomUuid) ?? new Set<BbunWsClient>();
 
     roomSet.add(client);
-
     this.roomClients.set(roomUuid, roomSet);
   }
 
-  private leaveRoom(client: BbunWsClient) {
+  private leaveRoom(client: BbunWsClient): void {
     let roomUuid: string;
 
     try {

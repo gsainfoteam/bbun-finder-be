@@ -3,6 +3,18 @@ import { WsException } from '@nestjs/websockets';
 import { WsBaseDto } from './dto/ws-base.dto';
 import { sendWsBaseDtoToClient } from './websocket.utils';
 
+//추가
+export type AuthorizeClientParams = {
+  userUuid: string;
+  userName: string;
+  studentNumber: string;
+  profileImageUrl: string | null;
+  roomUuid: string;
+  lineKey: string;
+  accessToken: string;
+  validUntil: Date;
+};
+
 export class BbunWsClient {
   private readonly wsClient: WebSocket;
 
@@ -20,18 +32,18 @@ export class BbunWsClient {
   private accessToken: string | null = null;
   private validUntil: Date | null = null;
 
-  private sentMessageMap = new Map<string, WsBaseDto<any>>();
-  private queuedTasks: (() => Promise<any>)[] = [];
+  private readonly sentMessageMap = new Map<string, WsBaseDto<unknown>>();
+  private queuedTasks: Array<() => Promise<void>> = [];
 
   constructor(wsClient: WebSocket) {
     this.wsClient = wsClient;
   }
 
-  getWsClient() {
+  getWsClient(): WebSocket {
     return this.wsClient;
   }
 
-  getIsAuthorized() {
+  getIsAuthorized(): boolean {
     return this.isAuthorized;
   }
 
@@ -45,13 +57,18 @@ export class BbunWsClient {
     return this.userName;
   }
 
-  getRoomUuid(): string {
-    if (!this.roomUuid) throw new WsException('Room not joined');
-    return this.roomUuid;
+  getStudentNumber(): string {
+    if (!this.studentNumber) throw new WsException('User not authorized');
+    return this.studentNumber;
   }
 
   getProfileImageUrl(): string | null {
     return this.profileImageUrl;
+  }
+
+  getRoomUuid(): string {
+    if (!this.roomUuid) throw new WsException('Room not joined');
+    return this.roomUuid;
   }
 
   getLineKey(): string {
@@ -59,28 +76,19 @@ export class BbunWsClient {
     return this.lineKey;
   }
 
-  isValidAccessToken() {
+  isValidAccessToken(): boolean {
     if (!this.validUntil) return false;
     return new Date() < this.validUntil;
   }
 
-  setNeedAuthorizationUntil(authorizationUntil: Date) {
+  setNeedAuthorizationUntil(authorizationUntil: Date): void {
     this.isAuthorized = false;
     this.needAuthorizationUntil = authorizationUntil;
     this.accessToken = null;
     this.validUntil = null;
   }
 
-  setAuthorized(params: {
-    userUuid: string;
-    userName: string;
-    studentNumber: string;
-    profileImageUrl: string | null;
-    roomUuid: string;
-    lineKey: string;
-    accessToken: string;
-    validUntil: Date;
-  }) {
+  setAuthorized(params: AuthorizeClientParams): void {
     if (
       this.needAuthorizationUntil &&
       new Date() > this.needAuthorizationUntil
@@ -100,19 +108,18 @@ export class BbunWsClient {
     this.needAuthorizationUntil = null;
   }
 
-  sendMessage(message: WsBaseDto<any>, trackRequest = false) {
+  sendMessage<TBody>(message: WsBaseDto<TBody>, trackRequest = false): void {
     if (trackRequest) {
       this.sentMessageMap.set(message.request_id, message);
     }
-
     sendWsBaseDtoToClient(this.wsClient, message);
   }
 
-  addTaskToQueue<T>(task: () => Promise<T>) {
+  addTaskToQueue(task: () => Promise<void>): void {
     this.queuedTasks.push(task);
   }
 
-  async waitForAllTasks() {
+  async waitForAllTasks(): Promise<void> {
     const tasks = [...this.queuedTasks];
     this.queuedTasks = [];
 
@@ -121,7 +128,7 @@ export class BbunWsClient {
     }
   }
 
-  resolveRequestId(requestId: string, type: string) {
+  resolveRequestId(requestId: string, type: string): void {
     const pendingReq = this.sentMessageMap.get(requestId);
 
     if (!pendingReq || pendingReq.type !== type) {
@@ -132,7 +139,7 @@ export class BbunWsClient {
     this.sentMessageMap.delete(requestId);
   }
 
-  destroy() {
+  destroy(): void {
     this.wsClient.close();
     this.sentMessageMap.clear();
     this.queuedTasks = [];

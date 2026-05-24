@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsDate } from 'class-validator';
+import { IsDate, IsString, IsNotEmpty } from 'class-validator';
 
 export class WsAuthorizationReqDto {
   @Type(() => Date)
@@ -8,5 +8,7 @@ export class WsAuthorizationReqDto {
 }
 
 export class WsAuthorizationResDto {
+  @IsString()
+  @IsNotEmpty()
   authorization!: string;
 }

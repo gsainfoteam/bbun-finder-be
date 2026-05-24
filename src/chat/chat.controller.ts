@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  ParseIntPipe,
   Post,
   Query,
   UseGuards,
@@ -13,6 +14,8 @@ import { Prisma } from '../../generated/prisma/client';
 import { JwtGuard } from '../auth/guards/jwt.guard';
 import { GetUser } from '../auth/decorators/getUser.decorator';
 import { ChatService } from './chat.service';
+import { WsBlockUserReqDto } from './dto/ws-block-user.dto';
+import { ChatMessageResponseDto } from './dto/chat-message-response.dto';
 
 @ApiTags('chat')
 @Controller('chat')
@@ -26,12 +29,12 @@ export class ChatController {
   async getMessages(
     @GetUser() user: Prisma.UserModel,
     @Query('cursor') cursor?: string,
-    @Query('take') take?: string,
-  ) {
+    @Query('take', new ParseIntPipe({ optional: true })) take?: number,
+  ): Promise<ChatMessageResponseDto[]> {
     return this.chatService.getRecentMessages({
       userUuid: user.uuid,
       cursor,
-      take: take ? Number(take) : 30,
+      take,
     });
   }
 
@@ -40,8 +43,8 @@ export class ChatController {
   @UseGuards(JwtGuard)
   async blockUser(
     @GetUser() user: Prisma.UserModel,
-    @Body() body: { targetUserUuid: string },
-  ) {
+    @Body() body: WsBlockUserReqDto,
+  ): Promise<void> {
     return this.chatService.blockUser({
       blockerUserUuid: user.uuid,
       blockedUserUuid: body.targetUserUuid,
@@ -53,8 +56,8 @@ export class ChatController {
   @UseGuards(JwtGuard)
   async unblockUser(
     @GetUser() user: Prisma.UserModel,
-    @Body() body: { targetUserUuid: string },
-  ) {
+    @Body() body: WsBlockUserReqDto,
+  ): Promise<{ count: number }> {
     return this.chatService.unblockUser({
       blockerUserUuid: user.uuid,
       blockedUserUuid: body.targetUserUuid,

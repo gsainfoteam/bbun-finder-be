@@ -17,6 +17,7 @@ import { WsSendChatReqDto } from '../chat/dto/ws-send-chat.dto';
 import { WsEditChatReqDto } from '../chat/dto/ws-edit-chat.dto';
 import { WsDeleteChatReqDto } from '../chat/dto/ws-delete-chat.dto';
 import { WsBlockUserReqDto } from '../chat/dto/ws-block-user.dto';
+import { ChatMessageResponseDto } from '../chat/dto/chat-message-response.dto';
 
 @WebSocketGateway({ path: '/ws' })
 export class WebsocketGateway
@@ -28,19 +29,19 @@ export class WebsocketGateway
     private readonly chatService: ChatService,
   ) {}
 
-  handleConnection(wsClient: WebSocket) {
+  handleConnection(wsClient: WebSocket): void {
     this.websocketService.addClient(wsClient);
   }
 
-  handleDisconnect(wsClient: WebSocket) {
+  handleDisconnect(wsClient: WebSocket): void {
     this.websocketService.deleteClient(wsClient);
   }
 
   @SubscribeMessage('authorization')
   async authorization(
     @ConnectedSocket() wsClient: WebSocket,
-    @MessageBody() payload: WsBaseDto<WsAuthorizationResDto>,
-  ) {
+    @MessageBody() payload: WsBaseDto<WsAuthorizationResDto, 'authorization'>,
+  ): Promise<void> {
     const client = this.websocketService.getClientOrThrow(wsClient);
 
     if (client.getIsAuthorized()) {
@@ -81,8 +82,8 @@ export class WebsocketGateway
   @SubscribeMessage('send_chat')
   async sendChat(
     @ConnectedSocket() wsClient: WebSocket,
-    @MessageBody() payload: WsBaseDto<WsSendChatReqDto>,
-  ) {
+    @MessageBody() payload: WsBaseDto<WsSendChatReqDto, 'send_chat'>,
+  ): Promise<void> {
     const checked = this.websocketService.checkIfValidClient(wsClient);
 
     if (checked.needAuthorization) {
@@ -105,13 +106,18 @@ export class WebsocketGateway
         client.getUserUuid(),
       );
 
+    const chatReceivedMessage: WsBaseDto<
+      ChatMessageResponseDto,
+      'chat_received'
+    > = {
+      type: 'chat_received',
+      request_id: randomUUID(),
+      body: this.chatService.toMessageResponse(message),
+    };
+
     this.websocketService.broadcastToRoom(
       client.getRoomUuid(),
-      {
-        type: 'chat_received',
-        request_id: randomUUID(),
-        body: this.chatService.toMessageResponse(message),
-      },
+      chatReceivedMessage,
       {
         excludeUserUuids: blockedReceiverUuids,
       },
@@ -121,8 +127,8 @@ export class WebsocketGateway
   @SubscribeMessage('edit_chat')
   async editChat(
     @ConnectedSocket() wsClient: WebSocket,
-    @MessageBody() payload: WsBaseDto<WsEditChatReqDto>,
-  ) {
+    @MessageBody() payload: WsBaseDto<WsEditChatReqDto, 'edit_chat'>,
+  ): Promise<void> {
     const checked = this.websocketService.checkIfValidClient(wsClient);
 
     if (checked.needAuthorization) {
@@ -145,13 +151,16 @@ export class WebsocketGateway
         client.getUserUuid(),
       );
 
-    this.websocketService.broadcastToRoom(
-      client.getRoomUuid(),
+    const chatEditedMessage: WsBaseDto<ChatMessageResponseDto, 'chat_edited'> =
       {
         type: 'chat_edited',
         request_id: randomUUID(),
         body: this.chatService.toMessageResponse(message),
-      },
+      };
+
+    this.websocketService.broadcastToRoom(
+      client.getRoomUuid(),
+      chatEditedMessage,
       {
         excludeUserUuids: blockedReceiverUuids,
       },
@@ -161,8 +170,8 @@ export class WebsocketGateway
   @SubscribeMessage('delete_chat')
   async deleteChat(
     @ConnectedSocket() wsClient: WebSocket,
-    @MessageBody() payload: WsBaseDto<WsDeleteChatReqDto>,
-  ) {
+    @MessageBody() payload: WsBaseDto<WsDeleteChatReqDto, 'delete_chat'>,
+  ): Promise<void> {
     const checked = this.websocketService.checkIfValidClient(wsClient);
 
     if (checked.needAuthorization) {
@@ -184,13 +193,18 @@ export class WebsocketGateway
         client.getUserUuid(),
       );
 
+    const chatDeletedMessage: WsBaseDto<
+      ChatMessageResponseDto,
+      'chat_deleted'
+    > = {
+      type: 'chat_deleted',
+      request_id: randomUUID(),
+      body: this.chatService.toMessageResponse(message),
+    };
+
     this.websocketService.broadcastToRoom(
       client.getRoomUuid(),
-      {
-        type: 'chat_deleted',
-        request_id: randomUUID(),
-        body: this.chatService.toMessageResponse(message),
-      },
+      chatDeletedMessage,
       {
         excludeUserUuids: blockedReceiverUuids,
       },
@@ -200,8 +214,8 @@ export class WebsocketGateway
   @SubscribeMessage('block_user')
   async blockUser(
     @ConnectedSocket() wsClient: WebSocket,
-    @MessageBody() payload: WsBaseDto<WsBlockUserReqDto>,
-  ) {
+    @MessageBody() payload: WsBaseDto<WsBlockUserReqDto, 'block_user'>,
+  ): Promise<void> {
     const checked = this.websocketService.checkIfValidClient(wsClient);
 
     if (checked.needAuthorization) {
@@ -222,8 +236,8 @@ export class WebsocketGateway
   @SubscribeMessage('unblock_user')
   async unblockUser(
     @ConnectedSocket() wsClient: WebSocket,
-    @MessageBody() payload: WsBaseDto<WsBlockUserReqDto>,
-  ) {
+    @MessageBody() payload: WsBaseDto<WsBlockUserReqDto, 'unblock_user'>,
+  ): Promise<void> {
     const checked = this.websocketService.checkIfValidClient(wsClient);
 
     if (checked.needAuthorization) {

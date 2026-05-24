@@ -1,11 +1,37 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@lib/prisma';
+import { ChatMessageStatus } from '../../generated/prisma/enums';
+import { ChatMessageWithSender } from './dto/chat-message-response.dto';
+
+export type ChatUserForRoom = {
+  uuid: string;
+  name: string;
+  studentNumber: string;
+  profileImageUrl: string | null;
+  consent: boolean;
+  deletedAt: Date | null;
+};
+
+export type ChatRoomEntity = {
+  uuid: string;
+  lineKey: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type ChatRoomMemberEntity = {
+  uuid: string;
+  roomUuid: string;
+  userUuid: string;
+  joinedAt: Date;
+  leftAt: Date | null;
+};
 
 @Injectable()
 export class ChatRepository {
   constructor(private readonly prismaService: PrismaService) {}
 
-  async findUserByUuid(userUuid: string) {
+  async findUserByUuid(userUuid: string): Promise<ChatUserForRoom | null> {
     return this.prismaService.user.findUnique({
       where: {
         uuid: userUuid,
@@ -22,7 +48,7 @@ export class ChatRepository {
     });
   }
 
-  async findOrCreateRoomByLineKey(lineKey: string) {
+  async findOrCreateRoomByLineKey(lineKey: string): Promise<ChatRoomEntity> {
     return this.prismaService.chatRoom.upsert({
       where: {
         lineKey,
@@ -34,7 +60,10 @@ export class ChatRepository {
     });
   }
 
-  async upsertRoomMember(roomUuid: string, userUuid: string) {
+  async upsertRoomMember(
+    roomUuid: string,
+    userUuid: string,
+  ): Promise<ChatRoomMemberEntity> {
     return this.prismaService.chatRoomMember.upsert({
       where: {
         roomUuid_userUuid: {
@@ -52,7 +81,7 @@ export class ChatRepository {
     });
   }
 
-  async leaveAllRoomsByUserUuid(userUuid: string) {
+  async leaveAllRoomsByUserUuid(userUuid: string): Promise<{ count: number }> {
     return this.prismaService.chatRoomMember.updateMany({
       where: {
         userUuid,
@@ -68,7 +97,7 @@ export class ChatRepository {
     roomUuid: string;
     senderUuid: string;
     content: string;
-  }) {
+  }): Promise<ChatMessageWithSender> {
     return this.prismaService.chatMessage.create({
       data: {
         roomUuid: params.roomUuid,
@@ -87,7 +116,9 @@ export class ChatRepository {
     });
   }
 
-  async findMessageByUuid(messageUuid: string) {
+  async findMessageByUuid(
+    messageUuid: string,
+  ): Promise<ChatMessageWithSender | null> {
     return this.prismaService.chatMessage.findUnique({
       where: {
         uuid: messageUuid,
@@ -104,7 +135,10 @@ export class ChatRepository {
     });
   }
 
-  async editMessage(messageUuid: string, content: string) {
+  async editMessage(
+    messageUuid: string,
+    content: string,
+  ): Promise<ChatMessageWithSender> {
     return this.prismaService.chatMessage.update({
       where: {
         uuid: messageUuid,
@@ -125,14 +159,14 @@ export class ChatRepository {
     });
   }
 
-  async softDeleteMessage(messageUuid: string) {
+  async softDeleteMessage(messageUuid: string): Promise<ChatMessageWithSender> {
     return this.prismaService.chatMessage.update({
       where: {
         uuid: messageUuid,
       },
       data: {
         content: null,
-        status: 'DELETED',
+        status: ChatMessageStatus.DELETED,
         deletedAt: new Date(),
       },
       include: {
@@ -152,7 +186,7 @@ export class ChatRepository {
     userUuid: string;
     take: number;
     cursor?: string;
-  }) {
+  }): Promise<ChatMessageWithSender[]> {
     const blockedUsers = await this.prismaService.userBlock.findMany({
       where: {
         blockerUserUuid: params.userUuid,
@@ -193,8 +227,11 @@ export class ChatRepository {
     });
   }
 
-  async blockUser(blockerUserUuid: string, blockedUserUuid: string) {
-    return this.prismaService.userBlock.upsert({
+  async blockUser(
+    blockerUserUuid: string,
+    blockedUserUuid: string,
+  ): Promise<void> {
+    await this.prismaService.userBlock.upsert({
       where: {
         blockerUserUuid_blockedUserUuid: {
           blockerUserUuid,
@@ -209,7 +246,10 @@ export class ChatRepository {
     });
   }
 
-  async unblockUser(blockerUserUuid: string, blockedUserUuid: string) {
+  async unblockUser(
+    blockerUserUuid: string,
+    blockedUserUuid: string,
+  ): Promise<{ count: number }> {
     return this.prismaService.userBlock.deleteMany({
       where: {
         blockerUserUuid,
@@ -218,7 +258,9 @@ export class ChatRepository {
     });
   }
 
-  async findReceiverUuidsBlockingSender(senderUserUuid: string) {
+  async findReceiverUuidsBlockingSender(
+    senderUserUuid: string,
+  ): Promise<string[]> {
     const blocks = await this.prismaService.userBlock.findMany({
       where: {
         blockedUserUuid: senderUserUuid,

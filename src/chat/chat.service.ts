@@ -3,16 +3,39 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { ChatRepository } from './chat.repository';
+import { ChatMessageStatus } from '../../generated/prisma/enums';
+import {
+  ChatRepository,
+  ChatRoomEntity,
+  ChatUserForRoom,
+} from './chat.repository';
+import {
+  ChatMessageResponseDto,
+  ChatMessageWithSender,
+} from './dto/chat-message-response.dto';
 
 const EDIT_LIMIT_MS = 5 * 60 * 1000;
 const MAX_MESSAGE_LENGTH = 1000;
+const DEFAULT_MESSAGE_TAKE = 30;
+const MAX_MESSAGE_TAKE = 50;
+
+export type MyBbunRoomContext = {
+  user: ChatUserForRoom;
+  room: ChatRoomEntity;
+  lineKey: string;
+};
 
 @Injectable()
 export class ChatService {
   constructor(private readonly chatRepository: ChatRepository) {}
 
-  async syncBbunRoomForUser(userUuid: string, studentNumber: string) {
+  async syncBbunRoomForUser(
+    userUuid: string,
+    studentNumber: string,
+  ): Promise<{
+    room: ChatRoomEntity;
+    lineKey: string;
+  }> {
     const lineKey = this.extractLineKey(studentNumber);
 
     const room = await this.chatRepository.findOrCreateRoomByLineKey(lineKey);
@@ -25,7 +48,7 @@ export class ChatService {
     };
   }
 
-  async getOrCreateMyBbunRoom(userUuid: string) {
+  async getOrCreateMyBbunRoom(userUuid: string): Promise<MyBbunRoomContext> {
     const user = await this.chatRepository.findUserByUuid(userUuid);
 
     if (!user || user.deletedAt) {
@@ -52,16 +75,8 @@ export class ChatService {
     userUuid: string;
     roomUuid: string;
     message: string;
-  }) {
-    const content = params.message.trim();
-
-    if (!content) {
-      throw new ForbiddenException('Message is empty');
-    }
-
-    if (content.length > MAX_MESSAGE_LENGTH) {
-      throw new ForbiddenException('Message is too long');
-    }
+  }): Promise<ChatMessageWithSender> {
+    const content = this.normalizeMessage(params.message);
 
     return this.chatRepository.createMessage({
       roomUuid: params.roomUuid,
@@ -74,7 +89,7 @@ export class ChatService {
     userUuid: string;
     messageUuid: string;
     message: string;
-  }) {
+  }): Promise<ChatMessageWithSender> {
     const message = await this.chatRepository.findMessageByUuid(
       params.messageUuid,
     );
@@ -95,20 +110,15 @@ export class ChatService {
       throw new ForbiddenException('Edit time expired');
     }
 
-    const content = params.message.trim();
-
-    if (!content) {
-      throw new ForbiddenException('Message is empty');
-    }
-
-    if (content.length > MAX_MESSAGE_LENGTH) {
-      throw new ForbiddenException('Message is too long');
-    }
+    const content = this.normalizeMessage(params.message);
 
     return this.chatRepository.editMessage(params.messageUuid, content);
   }
 
-  async deleteChat(params: { userUuid: string; messageUuid: string }) {
+  async deleteChat(params: {
+    userUuid: string;
+    messageUuid: string;
+  }): Promise<ChatMessageWithSender> {
     const message = await this.chatRepository.findMessageByUuid(
       params.messageUuid,
     );
@@ -128,13 +138,15 @@ export class ChatService {
     userUuid: string;
     take?: number;
     cursor?: string;
-  }) {
+  }): Promise<ChatMessageResponseDto[]> {
     const { room } = await this.getOrCreateMyBbunRoom(params.userUuid);
+
+    const take = this.normalizeTake(params.take);
 
     const messages = await this.chatRepository.getRecentMessages({
       roomUuid: room.uuid,
       userUuid: params.userUuid,
-      take: params.take ?? 30,
+      take,
       cursor: params.cursor,
     });
 
@@ -144,12 +156,12 @@ export class ChatService {
   async blockUser(params: {
     blockerUserUuid: string;
     blockedUserUuid: string;
-  }) {
+  }): Promise<void> {
     if (params.blockerUserUuid === params.blockedUserUuid) {
       throw new ForbiddenException('Cannot block yourself');
     }
 
-    return this.chatRepository.blockUser(
+    await this.chatRepository.blockUser(
       params.blockerUserUuid,
       params.blockedUserUuid,
     );
@@ -158,36 +170,56 @@ export class ChatService {
   async unblockUser(params: {
     blockerUserUuid: string;
     blockedUserUuid: string;
-  }) {
+  }): Promise<{ count: number }> {
     return this.chatRepository.unblockUser(
       params.blockerUserUuid,
       params.blockedUserUuid,
     );
   }
 
-  async leaveAllRoomsForUser(userUuid: string) {
+  async leaveAllRoomsForUser(userUuid: string): Promise<{ count: number }> {
     return this.chatRepository.leaveAllRoomsByUserUuid(userUuid);
   }
 
-  async getReceiverUuidsBlockingSender(senderUserUuid: string) {
+  async getReceiverUuidsBlockingSender(
+    senderUserUuid: string,
+  ): Promise<string[]> {
     return this.chatRepository.findReceiverUuidsBlockingSender(senderUserUuid);
   }
 
-  toMessageResponse(message: any) {
-    const isDeleted = message.status === 'DELETED';
+  toMessageResponse(message: ChatMessageWithSender): ChatMessageResponseDto {
+    const isDeleted = message.status === ChatMessageStatus.DELETED;
 
     return {
       messageUuid: message.uuid,
       roomUuid: message.roomUuid,
       senderUuid: message.senderUuid,
-      senderName: message.sender?.name ?? null,
-      profileImageUrl: message.sender?.profileImageUrl ?? null,
-      message: isDeleted ? '메시지가 삭제되었습니다.' : message.content,
+      senderName: message.sender.name,
+      profileImageUrl: message.sender.profileImageUrl,
+      message: isDeleted ? '메시지가 삭제되었습니다.' : (message.content ?? ''),
       status: message.status,
       createdAt: message.createdAt,
       editedAt: message.editedAt,
       deletedAt: message.deletedAt,
     };
+  }
+
+  private normalizeMessage(message: string): string {
+    const content = message.trim();
+
+    if (!content) {
+      throw new ForbiddenException('Message is empty');
+    }
+
+    if (content.length > MAX_MESSAGE_LENGTH) {
+      throw new ForbiddenException('Message is too long');
+    }
+    return content;
+  }
+
+  private normalizeTake(take?: number): number {
+    if (!take) return DEFAULT_MESSAGE_TAKE;
+    return Math.min(Math.max(take, 1), MAX_MESSAGE_TAKE);
   }
 
   private extractLineKey(studentNumber: string) {

@@ -231,6 +231,9 @@ export class ChatRepository {
     blockerUserUuid: string,
     blockedUserUuid: string,
   ): Promise<void> {
+    if (blockerUserUuid === blockedUserUuid) {
+      throw new Error('Self Block is not allowed');
+    }
     await this.prismaService.userBlock.upsert({
       where: {
         blockerUserUuid_blockedUserUuid: {

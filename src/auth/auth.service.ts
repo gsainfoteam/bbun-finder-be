@@ -114,27 +114,25 @@ export class AuthService {
     user: Prisma.UserModel;
     validUntil: Date;
   }> {
+    let payload: WsJwtPayload;
     try {
-      const payload = await this.jwtService.verifyAsync<WsJwtPayload>(
-        accessToken,
-        {
-          secret: this.customConfigService.JWT_SECRET,
-          audience: this.customConfigService.JWT_AUDIENCE,
-          issuer: this.customConfigService.JWT_ISSUER,
-        },
-      );
-
-      const user = await this.authRepository.findExistUserByUuid(payload.sub);
-
-      return {
-        user,
-        validUntil: new Date(payload.exp * 1000),
-      };
+      payload = await this.jwtService.verifyAsync<WsJwtPayload>(accessToken, {
+        secret: this.customConfigService.JWT_SECRET,
+        audience: this.customConfigService.JWT_AUDIENCE,
+        issuer: this.customConfigService.JWT_ISSUER,
+      });
     } catch (err) {
       this.logger.error('validateWsAccessToken Error');
       this.logger.debug(err);
       throw new UnauthorizedException('Invalid access token');
     }
+    const user = await this.authRepository.findExistUserByUuid(payload.sub);
+    //사용자 없는 경우, Repsitory 단에서 401 뜸
+
+    return {
+      user,
+      validUntil: new Date(payload.exp * 1000),
+    };
   }
 
   private generateOpaqueToken() {

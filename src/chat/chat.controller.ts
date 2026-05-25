@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -31,10 +32,16 @@ export class ChatController {
     @Query('cursor') cursor?: string,
     @Query('take', new ParseIntPipe({ optional: true })) take?: number,
   ): Promise<ChatMessageResponseDto[]> {
+    const normalizedTake = take ?? 30;
+
+    if (normalizedTake < 1 || normalizedTake > 100) {
+      throw new BadRequestException('take must be between 1 and 100');
+    }
+
     return this.chatService.getRecentMessages({
       userUuid: user.uuid,
       cursor,
-      take,
+      take: normalizedTake,
     });
   }
 

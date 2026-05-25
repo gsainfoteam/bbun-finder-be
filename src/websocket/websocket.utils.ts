@@ -1,5 +1,6 @@
 import type WebSocket from 'ws';
 import { WsBaseDto } from './dto/ws-base.dto';
+import { WsException } from '@nestjs/websockets';
 
 type ParsedWsMessage = {
   type: string;
@@ -31,16 +32,26 @@ const isParsedWsMessage = (value: unknown): value is ParsedWsMessage => {
   );
 };
 
+const parsedWsMessage = (
+  data: string | ArrayBuffer | Buffer | Buffer[],
+): unknown => {
+  try {
+    return JSON.parse(toRawString(data));
+  } catch {
+    throw new WsException('Bad request: Invalid JSON message');
+  }
+};
+
 export const customMessageParser = (
   data: string | ArrayBuffer | Buffer | Buffer[],
 ): {
   event: string;
   data: WsBaseDto<unknown>;
 } => {
-  const parsed: unknown = JSON.parse(toRawString(data));
+  const parsed = parsedWsMessage(data);
 
   if (!isParsedWsMessage(parsed)) {
-    throw new Error('Invalid WebSocket message format');
+    throw new Error('Bad Request: Invalid WebSocket message format');
   }
 
   const wsMessage: WsBaseDto<unknown> = {

@@ -16,6 +16,7 @@ export type AuthorizeClientParams = {
 };
 
 export class BbunWsClient {
+  private static readonly MAX_QUEUED_TASKS = 100;
   private readonly wsClient: WebSocket;
 
   private isAuthorized = false;
@@ -116,16 +117,28 @@ export class BbunWsClient {
   }
 
   addTaskToQueue(task: () => Promise<void>): void {
+    if (this.queuedTasks.length >= BbunWsClient.MAX_QUEUED_TASKS) {
+      throw new WsException('Too many pending requests');
+    }
     this.queuedTasks.push(task);
   }
 
   async waitForAllTasks(): Promise<void> {
     const tasks = [...this.queuedTasks];
     this.queuedTasks = [];
+    let firstError: Error | null = null;
 
     for (const task of tasks) {
-      await task();
+      try {
+        await task();
+      } catch (error) {
+        if (!firstError) {
+          firstError =
+            error instanceof Error ? error : new Error(String(error));
+        }
+      }
     }
+    if (firstError) throw firstError;
   }
 
   resolveRequestId(requestId: string, type: string): void {

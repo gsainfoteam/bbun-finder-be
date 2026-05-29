@@ -214,7 +214,7 @@ export class ChatService {
       messageUuid: message.uuid,
       roomUuid: message.roomUuid,
       senderUuid: message.senderUuid,
-      message: isDeleted ? '메시지가 삭제되었습니다.' : (message.content ?? ''),
+      message: isDeleted ? '메시지가 삭제되었습니다.' : message.content,
       status: message.status,
       createdAt: message.createdAt,
       editedAt: message.editedAt,

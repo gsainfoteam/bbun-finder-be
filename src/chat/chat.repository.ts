@@ -350,6 +350,9 @@ export class ChatRepository {
     this.logger.error(`${methodName} Error`);
     this.logger.debug(err);
     if (err instanceof Prisma.PrismaClientKnownRequestError) {
+      if (err.code === 'P2000') {
+        throw new BadRequestException('Input value is too long');
+      }
       if (err.code === 'P2025') {
         throw new NotFoundException(
           option.notFoundMessage ?? 'Resource not found',

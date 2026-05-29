@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "ChatMessageStatus" AS ENUM ('ACTIVE', 'DELETED');
+CREATE TYPE "ChatMessageStatus" AS ENUM ('ACTIVE', 'EDITED', 'DELETED');
 
 -- CreateTable
 CREATE TABLE "chat_room" (
@@ -27,12 +27,12 @@ CREATE TABLE "chat_message" (
     "uuid" UUID NOT NULL,
     "room_uuid" UUID NOT NULL,
     "sender_uuid" UUID NOT NULL,
-    "content" TEXT,
     "status" "ChatMessageStatus" NOT NULL DEFAULT 'ACTIVE',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "edited_at" TIMESTAMP(3),
     "deleted_at" TIMESTAMP(3),
+    "content" VARCHAR(255) NOT NULL,
 
     CONSTRAINT "chat_message_pkey" PRIMARY KEY ("uuid")
 );
@@ -60,7 +60,10 @@ CREATE INDEX "chat_room_member_user_uuid_idx" ON "chat_room_member"("user_uuid")
 CREATE UNIQUE INDEX "chat_room_member_room_uuid_user_uuid_key" ON "chat_room_member"("room_uuid", "user_uuid");
 
 -- CreateIndex
-CREATE INDEX "chat_message_room_uuid_created_at_idx" ON "chat_message"("room_uuid", "created_at");
+CREATE INDEX "chat_message_room_uuid_created_at_uuid_idx" ON "chat_message"("room_uuid", "created_at", "uuid");
+
+-- CreateIndex
+CREATE INDEX "chat_message_room_uuid_status_created_at_uuid_idx" ON "chat_message"("room_uuid", "status", "created_at", "uuid");
 
 -- CreateIndex
 CREATE INDEX "chat_message_sender_uuid_idx" ON "chat_message"("sender_uuid");

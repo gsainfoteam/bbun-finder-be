@@ -87,10 +87,7 @@ export class WebsocketService {
 
     client.setNeedAuthorizationUntil(authorizationUntil);
 
-    const authorizationReq: WsBaseDto<
-      WsAuthorizationReqDto,
-      'request_authorization'
-    > = {
+    const authorizationReq: WsBaseDto<WsAuthorizationReqDto> = {
       type: 'request_authorization',
       request_id: randomUUID(),
       body: {

@@ -6,6 +6,6 @@ export class WsEditChatReqDto {
 
   @IsString()
   @IsNotEmpty()
-  @MaxLength(314)
+  @MaxLength(255)
   message!: string;
 }

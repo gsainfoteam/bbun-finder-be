@@ -16,7 +16,10 @@ import { JwtGuard } from '../auth/guards/jwt.guard';
 import { GetUser } from '../auth/decorators/getUser.decorator';
 import { ChatService } from './chat.service';
 import { WsBlockUserReqDto } from './dto/ws-block-user.dto';
-import { ChatMessageResponseDto } from './dto/chat-message-response.dto';
+import {
+  ChatMessageResponseDto,
+  ChatRoomInfoDto,
+} from './dto/chat-message-response.dto';
 
 @ApiTags('chat')
 @Controller('chat')
@@ -69,5 +72,14 @@ export class ChatController {
       blockerUserUuid: user.uuid,
       blockedUserUuid: body.targetUserUuid,
     });
+  }
+
+  @ApiBearerAuth('jwt')
+  @Get('info')
+  @UseGuards(JwtGuard)
+  async getChatRoomInfo(
+    @GetUser() user: Prisma.UserModel,
+  ): Promise<ChatRoomInfoDto> {
+    return this.chatService.getMyChatRoomInfo(user.uuid);
   }
 }

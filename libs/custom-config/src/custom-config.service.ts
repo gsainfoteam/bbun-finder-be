@@ -95,4 +95,16 @@ export class CustomConfigService {
   get REDIS_URL(): string {
     return this.getEnvVariable<string>('REDIS_URL');
   }
+  get EDIT_LIMIT_MS(): number {
+    return this.getEnvVariable<number>('EDIT_LIMIT_MS');
+  }
+  get MAX_MESSAGE_LENGTH(): number {
+    return this.getEnvVariable<number>('MAX_MESSAGE_LENGTH');
+  }
+  get DEFAULT_MESSAGE_TAKE(): number {
+    return this.getEnvVariable<number>('DEFAULT_MESSAGE_TAKE');
+  }
+  get MAX_MESSAGE_TAKE(): number {
+    return this.getEnvVariable<number>('MAX_MESSAGE_TAKE');
+  }
 }

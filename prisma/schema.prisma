@@ -48,6 +48,7 @@ enum Department {
 
 enum ChatMessageStatus {
   ACTIVE
+  EDITED
   DELETED
 }
 
@@ -109,19 +110,20 @@ model ChatMessage {
   uuid       String            @id @default(uuid()) @db.Uuid
   roomUuid   String            @map("room_uuid") @db.Uuid
   senderUuid String            @map("sender_uuid") @db.Uuid
-
-  content   String?
   status    ChatMessageStatus @default(ACTIVE)
 
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at")
   editedAt  DateTime? @map("edited_at")
   deletedAt DateTime? @map("deleted_at")
+  
+  content   String @db.VarChar(255)
 
   room   ChatRoom @relation(fields: [roomUuid], references: [uuid], onDelete: Cascade)
   sender User     @relation("ChatMessageSender", fields: [senderUuid], references: [uuid], onDelete: Cascade)
 
-  @@index([roomUuid, createdAt])
+  @@index([roomUuid, createdAt, uuid])
+  @@index([roomUuid,status,createdAt,uuid])
   @@index([senderUuid])
   @@map("chat_message")
 }

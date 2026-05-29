@@ -1,23 +1,21 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { ChatMessageStatus } from '../../generated/prisma/enums';
+import { ChatMessageStatus } from '../../generated/prisma/client';
 import {
   ChatRepository,
   ChatRoomEntity,
   ChatUserForRoom,
 } from './chat.repository';
 import {
+  ChatMessageEntity,
   ChatMessageResponseDto,
-  ChatMessageWithSender,
+  ChatRoomInfoDto,
 } from './dto/chat-message-response.dto';
-
-const EDIT_LIMIT_MS = 5 * 60 * 1000;
-const MAX_MESSAGE_LENGTH = 1000;
-const DEFAULT_MESSAGE_TAKE = 30;
-const MAX_MESSAGE_TAKE = 50;
+import { CustomConfigService } from '@lib/custom-config';
 
 export type MyBbunRoomContext = {
   user: ChatUserForRoom;
@@ -25,9 +23,13 @@ export type MyBbunRoomContext = {
   lineKey: string;
 };
 
+const STUDENT_NUMBER_REGEX = /^\d{8}$/;
 @Injectable()
 export class ChatService {
-  constructor(private readonly chatRepository: ChatRepository) {}
+  constructor(
+    private readonly chatRepository: ChatRepository,
+    private readonly customConfigService: CustomConfigService,
+  ) {}
 
   async syncBbunRoomForUser(
     userUuid: string,
@@ -75,7 +77,7 @@ export class ChatService {
     userUuid: string;
     roomUuid: string;
     message: string;
-  }): Promise<ChatMessageWithSender> {
+  }): Promise<ChatMessageEntity> {
     const content = this.normalizeMessage(params.message);
 
     return this.chatRepository.createMessage({
@@ -89,7 +91,7 @@ export class ChatService {
     userUuid: string;
     messageUuid: string;
     message: string;
-  }): Promise<ChatMessageWithSender> {
+  }): Promise<ChatMessageEntity> {
     const message = await this.chatRepository.findMessageByUuid(
       params.messageUuid,
     );
@@ -102,11 +104,14 @@ export class ChatService {
       throw new ForbiddenException('Cannot edit other user message');
     }
 
-    if (message.deletedAt) {
+    if (message.status === ChatMessageStatus.DELETED) {
       throw new ForbiddenException('Cannot edit deleted message');
     }
 
-    if (Date.now() - message.createdAt.getTime() > EDIT_LIMIT_MS) {
+    if (
+      Date.now() - message.createdAt.getTime() >
+      this.customConfigService.EDIT_LIMIT_MS
+    ) {
       throw new ForbiddenException('Edit time expired');
     }
 
@@ -118,7 +123,7 @@ export class ChatService {
   async deleteChat(params: {
     userUuid: string;
     messageUuid: string;
-  }): Promise<ChatMessageWithSender> {
+  }): Promise<ChatMessageEntity> {
     const message = await this.chatRepository.findMessageByUuid(
       params.messageUuid,
     );
@@ -129,6 +134,10 @@ export class ChatService {
 
     if (message.senderUuid !== params.userUuid) {
       throw new ForbiddenException('Cannot delete other user message');
+    }
+
+    if (message.status === ChatMessageStatus.DELETED) {
+      return message;
     }
 
     return this.chatRepository.softDeleteMessage(params.messageUuid);
@@ -158,7 +167,7 @@ export class ChatService {
     blockedUserUuid: string;
   }): Promise<void> {
     if (params.blockerUserUuid === params.blockedUserUuid) {
-      throw new ForbiddenException('Cannot block yourself');
+      throw new BadRequestException('Cannot block yourself');
     }
 
     await this.chatRepository.blockUser(
@@ -181,21 +190,30 @@ export class ChatService {
     return this.chatRepository.leaveAllRoomsByUserUuid(userUuid);
   }
 
+  async getMyChatRoomInfo(userUuid: string): Promise<ChatRoomInfoDto> {
+    const { room, lineKey } = await this.getOrCreateMyBbunRoom(userUuid);
+    const users = await this.chatRepository.findRoomUsers(room.uuid);
+
+    return {
+      roomUuid: room.uuid,
+      lineKey,
+      users,
+    };
+  }
+
   async getReceiverUuidsBlockingSender(
     senderUserUuid: string,
   ): Promise<string[]> {
     return this.chatRepository.findReceiverUuidsBlockingSender(senderUserUuid);
   }
 
-  toMessageResponse(message: ChatMessageWithSender): ChatMessageResponseDto {
+  toMessageResponse(message: ChatMessageEntity): ChatMessageResponseDto {
     const isDeleted = message.status === ChatMessageStatus.DELETED;
 
     return {
       messageUuid: message.uuid,
       roomUuid: message.roomUuid,
       senderUuid: message.senderUuid,
-      senderName: message.sender.name,
-      profileImageUrl: message.sender.profileImageUrl,
       message: isDeleted ? '메시지가 삭제되었습니다.' : (message.content ?? ''),
       status: message.status,
       createdAt: message.createdAt,
@@ -211,19 +229,22 @@ export class ChatService {
       throw new ForbiddenException('Message is empty');
     }
 
-    if (content.length > MAX_MESSAGE_LENGTH) {
+    if (content.length > this.customConfigService.MAX_MESSAGE_LENGTH) {
       throw new ForbiddenException('Message is too long');
     }
     return content;
   }
 
   private normalizeTake(take?: number): number {
-    if (!take) return DEFAULT_MESSAGE_TAKE;
-    return Math.min(Math.max(take, 1), MAX_MESSAGE_TAKE);
+    if (!take) return this.customConfigService.DEFAULT_MESSAGE_TAKE;
+    return Math.min(
+      Math.max(take, 1),
+      this.customConfigService.MAX_MESSAGE_TAKE,
+    );
   }
 
   private extractLineKey(studentNumber: string) {
-    if (studentNumber.length < 4) {
+    if (!STUDENT_NUMBER_REGEX.test(studentNumber)) {
       throw new ForbiddenException('Invalid student number');
     }
 

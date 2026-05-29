@@ -1,5 +1,5 @@
 import { plainToInstance } from 'class-transformer';
-import { IsNotEmpty, IsString, validateSync } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsString, validateSync } from 'class-validator';
 
 export class EnvironmentVariables {
   @IsString()
@@ -89,6 +89,22 @@ export class EnvironmentVariables {
   @IsString()
   @IsNotEmpty()
   REDIS_URL!: string;
+
+  @IsNumber()
+  @IsNotEmpty()
+  EDIT_LIMIT_MS!: number;
+
+  @IsNumber()
+  @IsNotEmpty()
+  MAX_MESSAGE_LENGTH!: number;
+
+  @IsNumber()
+  @IsNotEmpty()
+  DEFAULT_MESSAGE_TAKE!: number;
+
+  @IsNumber()
+  @IsNotEmpty()
+  MAX_MESSAGE_TAKE!: number;
 }
 
 export type EnvironmentVariableKeys = keyof EnvironmentVariables;

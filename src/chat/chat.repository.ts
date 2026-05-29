@@ -7,10 +7,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '@lib/prisma';
-import { Prisma } from '../../generated/prisma/client';
-import { ChatMessageStatus } from '../../generated/prisma/enums';
+import { Prisma, ChatMessageStatus } from '../../generated/prisma/client';
 import { Loggable } from '@lib/logger';
-import { ChatMessageWithSender } from './dto/chat-message-response.dto';
+import {
+  ChatMessageEntity,
+  ChatRoomUserDto,
+} from './dto/chat-message-response.dto';
 
 export type ChatUserForRoom = {
   uuid: string;
@@ -131,22 +133,13 @@ export class ChatRepository {
     roomUuid: string;
     senderUuid: string;
     content: string;
-  }): Promise<ChatMessageWithSender> {
+  }): Promise<ChatMessageEntity> {
     return this.prismaService.chatMessage
       .create({
         data: {
           roomUuid: params.roomUuid,
           senderUuid: params.senderUuid,
           content: params.content,
-        },
-        include: {
-          sender: {
-            select: {
-              uuid: true,
-              name: true,
-              profileImageUrl: true,
-            },
-          },
         },
       })
       .catch((err: unknown) =>
@@ -158,20 +151,11 @@ export class ChatRepository {
 
   async findMessageByUuid(
     messageUuid: string,
-  ): Promise<ChatMessageWithSender | null> {
+  ): Promise<ChatMessageEntity | null> {
     return this.prismaService.chatMessage
       .findUnique({
         where: {
           uuid: messageUuid,
-        },
-        include: {
-          sender: {
-            select: {
-              uuid: true,
-              name: true,
-              profileImageUrl: true,
-            },
-          },
         },
       })
       .catch((err: unknown) =>
@@ -182,7 +166,7 @@ export class ChatRepository {
   async editMessage(
     messageUuid: string,
     content: string,
-  ): Promise<ChatMessageWithSender> {
+  ): Promise<ChatMessageEntity> {
     return this.prismaService.chatMessage
       .update({
         where: {
@@ -190,16 +174,8 @@ export class ChatRepository {
         },
         data: {
           content,
+          status: ChatMessageStatus.EDITED,
           editedAt: new Date(),
-        },
-        include: {
-          sender: {
-            select: {
-              uuid: true,
-              name: true,
-              profileImageUrl: true,
-            },
-          },
         },
       })
       .catch((err: unknown) =>
@@ -209,25 +185,17 @@ export class ChatRepository {
       );
   }
 
-  async softDeleteMessage(messageUuid: string): Promise<ChatMessageWithSender> {
+  async softDeleteMessage(messageUuid: string): Promise<ChatMessageEntity> {
     return this.prismaService.chatMessage
       .update({
         where: {
           uuid: messageUuid,
         },
         data: {
-          content: null,
+          // 삭제된 메시지는 실제 content는 남기고, 상태만 Deleted로 바꿈
+          // 클라이언트 표시 문구는 CahtService.toMessageResponse()에서 생성
           status: ChatMessageStatus.DELETED,
           deletedAt: new Date(),
-        },
-        include: {
-          sender: {
-            select: {
-              uuid: true,
-              name: true,
-              profileImageUrl: true,
-            },
-          },
         },
       })
       .catch((err: unknown) =>
@@ -242,11 +210,15 @@ export class ChatRepository {
     userUuid: string;
     take: number;
     cursor?: string;
-  }): Promise<ChatMessageWithSender[]> {
+  }): Promise<ChatMessageEntity[]> {
     const blockedUsers = await this.prismaService.userBlock
       .findMany({
         where: {
           blockerUserUuid: params.userUuid,
+          // 일단 삭제된 메시지는 삭제되었다고 표시할 것인지 프론트쪽 진행상황을 몰라서 주석처리만 해두었습니다.
+          // status: {
+          //   in: [ChatMessageStatus.ACTIVE, ChatMessageStatus.EDITED],
+          // },
         },
         select: {
           blockedUserUuid: true,
@@ -273,18 +245,8 @@ export class ChatRepository {
               uuid: params.cursor,
             }
           : undefined,
-        orderBy: {
-          createdAt: 'desc',
-        },
-        include: {
-          sender: {
-            select: {
-              uuid: true,
-              name: true,
-              profileImageUrl: true,
-            },
-          },
-        },
+        //pagination 정렬 문제(createdAt이 완전히 똑같을 수도 있어서)
+        orderBy: [{ createdAt: 'desc' }, { uuid: 'desc' }],
       })
       .catch((err: unknown) =>
         this.handlePrismaError('getRecentMessages.findMessages', err, {
@@ -297,9 +259,6 @@ export class ChatRepository {
     blockerUserUuid: string,
     blockedUserUuid: string,
   ): Promise<void> {
-    if (blockerUserUuid === blockedUserUuid) {
-      throw new Error('Self Block is not allowed');
-    }
     await this.prismaService.userBlock
       .upsert({
         where: {
@@ -314,12 +273,7 @@ export class ChatRepository {
           blockedUserUuid,
         },
       })
-      .catch((err: unknown) =>
-        this.handlePrismaError('blockUser', err, {
-          foreignKeyMessage: 'Blocker user or blocked user does not exist',
-          conflictMessage: 'User block already exists',
-        }),
-      );
+      .catch((err: unknown) => this.handlePrismaError('blockUser', err));
   }
 
   async unblockUser(
@@ -334,6 +288,39 @@ export class ChatRepository {
         },
       })
       .catch((err: unknown) => this.handlePrismaError('unblockUser', err));
+  }
+
+  async findRoomUsers(roomUuid: string): Promise<ChatRoomUserDto[]> {
+    const members = await this.prismaService.chatRoomMember
+      .findMany({
+        where: {
+          roomUuid,
+          leftAt: null,
+          user: {
+            consent: true,
+            deletedAt: null,
+          },
+        },
+        include: {
+          user: {
+            select: {
+              uuid: true,
+              name: true,
+              profileImageUrl: true,
+            },
+          },
+        },
+        orderBy: {
+          joinedAt: 'asc',
+        },
+      })
+      .catch((err: unknown) => this.handlePrismaError('findRoomUsers', err));
+
+    return members.map((member) => ({
+      userUuid: member.user.uuid,
+      name: member.user.name,
+      profileImageUrl: member.user.profileImageUrl,
+    }));
   }
 
   async findReceiverUuidsBlockingSender(
@@ -360,38 +347,28 @@ export class ChatRepository {
     err: unknown,
     option: PrismaErrorOption = {},
   ): never {
+    this.logger.error(`${methodName} Error`);
+    this.logger.debug(err);
     if (err instanceof Prisma.PrismaClientKnownRequestError) {
       if (err.code === 'P2025') {
-        this.logger.error(`${methodName} Error`);
-        this.logger.debug(err);
         throw new NotFoundException(
           option.notFoundMessage ?? 'Resource not found',
         );
       }
 
       if (err.code === 'P2002') {
-        this.logger.error(`${methodName} Error`);
-        this.logger.debug(err);
         throw new ConflictException(
           option.conflictMessage ?? 'Unique constraint failed',
         );
       }
 
       if (err.code === 'P2003') {
-        this.logger.error(`${methodName} Error`);
-        this.logger.debug(err);
         throw new BadRequestException(
           option.foreignKeyMessage ?? 'Invalid relation',
         );
       }
-
-      this.logger.error(`${methodName} Error`);
-      this.logger.debug(err);
       throw new InternalServerErrorException('Database Error');
     }
-
-    this.logger.error(`${methodName} Error`);
-    this.logger.debug(err);
     throw new InternalServerErrorException('Unknown Error');
   }
 }

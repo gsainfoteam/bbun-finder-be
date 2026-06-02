@@ -57,7 +57,7 @@ CREATE INDEX "chat_room_member_user_uuid_idx" ON "chat_room_member"("user_uuid")
 CREATE UNIQUE INDEX "chat_room_member_room_uuid_user_uuid_key" ON "chat_room_member"("room_uuid", "user_uuid");
 
 -- CreateIndex
-CREATE INDEX "chat_message_room_uuid_created_at_uuid_idx" ON "chat_message"("room_uuid", "created_at", "uuid");
+CREATE INDEX "chat_message_room_uuid_created_at_idx" ON "chat_message"("room_uuid", "created_at");
 
 -- CreateIndex
 CREATE INDEX "user_block_blocked_user_uuid_idx" ON "user_block"("blocked_user_uuid");

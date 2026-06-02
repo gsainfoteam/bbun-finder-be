@@ -121,7 +121,7 @@ model ChatMessage {
   room   ChatRoom @relation(fields: [roomUuid], references: [uuid], onDelete: Cascade)
   sender User     @relation("ChatMessageSender", fields: [senderUuid], references: [uuid], onDelete: Cascade)
 
-  @@index([roomUuid, createdAt, uuid])
+  @@index([roomUuid, createdAt])
   @@map("chat_message")
 }
 

@@ -51,9 +51,6 @@ CREATE TABLE "user_block" (
 CREATE UNIQUE INDEX "chat_room_line_key_key" ON "chat_room"("line_key");
 
 -- CreateIndex
-CREATE INDEX "chat_room_member_room_uuid_idx" ON "chat_room_member"("room_uuid");
-
--- CreateIndex
 CREATE INDEX "chat_room_member_user_uuid_idx" ON "chat_room_member"("user_uuid");
 
 -- CreateIndex
@@ -61,12 +58,6 @@ CREATE UNIQUE INDEX "chat_room_member_room_uuid_user_uuid_key" ON "chat_room_mem
 
 -- CreateIndex
 CREATE INDEX "chat_message_room_uuid_created_at_uuid_idx" ON "chat_message"("room_uuid", "created_at", "uuid");
-
--- CreateIndex
-CREATE INDEX "chat_message_room_uuid_status_created_at_uuid_idx" ON "chat_message"("room_uuid", "status", "created_at", "uuid");
-
--- CreateIndex
-CREATE INDEX "chat_message_sender_uuid_idx" ON "chat_message"("sender_uuid");
 
 -- CreateIndex
 CREATE INDEX "user_block_blocked_user_uuid_idx" ON "user_block"("blocked_user_uuid");

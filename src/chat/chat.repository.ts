@@ -192,8 +192,9 @@ export class ChatRepository {
           uuid: messageUuid,
         },
         data: {
-          // 삭제된 메시지는 실제 content는 남기고, 상태만 Deleted로 바꿈
-          // 클라이언트 표시 문구는 CahtService.toMessageResponse()에서 생성
+          // 삭제된 메시지는 복구 및 기록 확인을 위해 content를 보존한다.
+          // 일반 사용자 응답에서는 ChatService.toMessageResponse()가
+          // 원문 대신 삭제 placeholder를 반환한다.
           status: ChatMessageStatus.DELETED,
           deletedAt: new Date(),
         },
@@ -250,6 +251,59 @@ export class ChatRepository {
       })
       .catch((err: unknown) =>
         this.handlePrismaError('getRecentMessages.findMessages', err, {
+          notFoundMessage: 'Cursor message not found',
+        }),
+      );
+  }
+
+  async searchMessages(params: {
+    roomUuid: string;
+    userUuid: string;
+    keyword: string;
+    take: number;
+    cursor?: string;
+  }): Promise<ChatMessageEntity[]> {
+    const blockedUsers = await this.prismaService.userBlock
+      .findMany({
+        where: {
+          blockerUserUuid: params.userUuid,
+        },
+        select: {
+          blockedUserUuid: true,
+        },
+      })
+      .catch((err: unknown) =>
+        this.handlePrismaError('searchMessages.findBlockedUsers', err),
+      );
+
+    const blockedUserUuids = blockedUsers.map((item) => item.blockedUserUuid);
+
+    return this.prismaService.chatMessage
+      .findMany({
+        where: {
+          roomUuid: params.roomUuid,
+          senderUuid: {
+            notIn: blockedUserUuids,
+          },
+          status: {
+            in: [ChatMessageStatus.ACTIVE, ChatMessageStatus.EDITED],
+          },
+          content: {
+            contains: params.keyword,
+            mode: 'insensitive',
+          },
+        },
+        take: params.take,
+        skip: params.cursor ? 1 : 0,
+        cursor: params.cursor
+          ? {
+              uuid: params.cursor,
+            }
+          : undefined,
+        orderBy: [{ createdAt: 'desc' }, { uuid: 'desc' }],
+      })
+      .catch((err: unknown) =>
+        this.handlePrismaError('searchMessages.findMessages', err, {
           notFoundMessage: 'Cursor message not found',
         }),
       );

@@ -101,7 +101,6 @@ model ChatRoomMember {
   user User     @relation(fields: [userUuid], references: [uuid], onDelete: Cascade)
 
   @@unique([roomUuid, userUuid])
-  @@index([roomUuid])
   @@index([userUuid])
   @@map("chat_room_member")
 }
@@ -123,8 +122,6 @@ model ChatMessage {
   sender User     @relation("ChatMessageSender", fields: [senderUuid], references: [uuid], onDelete: Cascade)
 
   @@index([roomUuid, createdAt, uuid])
-  @@index([roomUuid,status,createdAt,uuid])
-  @@index([senderUuid])
   @@map("chat_message")
 }
 

@@ -162,6 +162,27 @@ export class ChatService {
     return messages.map((message) => this.toMessageResponse(message)).reverse();
   }
 
+  async searchMessages(params: {
+    userUuid: string;
+    keyword: string;
+    take?: number;
+    cursor?: string;
+  }): Promise<ChatMessageResponseDto[]> {
+    const keyword = this.normalizeSearchKeyword(params.keyword);
+    const { room } = await this.getOrCreateMyBbunRoom(params.userUuid);
+    const take = this.normalizeTake(params.take);
+
+    const messages = await this.chatRepository.searchMessages({
+      roomUuid: room.uuid,
+      userUuid: params.userUuid,
+      keyword,
+      take,
+      cursor: params.cursor,
+    });
+
+    return messages.map((message) => this.toMessageResponse(message));
+  }
+
   async blockUser(params: {
     blockerUserUuid: string;
     blockedUserUuid: string;
@@ -233,6 +254,19 @@ export class ChatService {
       throw new ForbiddenException('Message is too long');
     }
     return content;
+  }
+  private normalizeSearchKeyword(keyword: string): string {
+    const normalizedKeyword = keyword.trim();
+
+    if (!normalizedKeyword) {
+      throw new BadRequestException('Search keyword is empty');
+    }
+
+    if (normalizedKeyword.length > 255) {
+      throw new BadRequestException('Search keyword is too long');
+    }
+
+    return normalizedKeyword;
   }
 
   private normalizeTake(take?: number): number {

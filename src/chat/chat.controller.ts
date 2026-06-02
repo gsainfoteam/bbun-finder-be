@@ -20,6 +20,7 @@ import {
   ChatMessageResponseDto,
   ChatRoomInfoDto,
 } from './dto/chat-message-response.dto';
+import { SearchChatMessagesQueryDto } from './dto/search-chat-messages-query.dto';
 
 @ApiTags('chat')
 @Controller('chat')
@@ -45,6 +46,22 @@ export class ChatController {
       userUuid: user.uuid,
       cursor,
       take: normalizedTake,
+    });
+  }
+
+  @ApiBearerAuth('jwt')
+  @Get('messages/search')
+  @UseGuards(JwtGuard)
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  async searchMessages(
+    @GetUser() user: Prisma.UserModel,
+    @Query() query: SearchChatMessagesQueryDto,
+  ): Promise<ChatMessageResponseDto[]> {
+    return this.chatService.searchMessages({
+      userUuid: user.uuid,
+      keyword: query.keyword,
+      cursor: query.cursor,
+      take: query.take,
     });
   }
 

@@ -8,7 +8,7 @@ import {
 import { PrismaService } from '@lib/prisma';
 import { Loggable } from '@lib/logger/decorator/loggable';
 import { IdTokenPayloadType } from '@lib/infoteam-account';
-import { Prisma } from 'generated/prisma/client';
+import { Prisma } from '../../generated/prisma/client';
 import { UpdateDataDto } from './dto/req/updateData.dto';
 
 @Injectable()

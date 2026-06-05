@@ -46,21 +46,95 @@ enum Department {
   GS     // 도전탐색과정
 }
 
+enum ChatMessageStatus {
+  ACTIVE
+  EDITED
+  DELETED
+}
+
 model User {
   uuid            String    @id @db.Uuid
-  name            String    //이름
-  studentNumber   String    @unique @map("student_number") //학번
-  email           String    @unique //이메일
-  profileImageUrl String?   @map("profile_image_url") //프로필 이미지 URL
+  name            String
+  studentNumber   String    @unique @map("student_number")
+  email           String    @unique
+  profileImageUrl String?   @map("profile_image_url")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at")
   deletedAt       DateTime? @map("deleted_at")
-  consent         Boolean   @default(false) //개인정보 수집 동의 여부
+  consent         Boolean   @default(false)
 
-  department  Department? @map("department") //학과
-  MBTI        Mbti? @map("mbti") //MBTI
-  instaId     String? @map("insta_id") //인스타 아이디
-  description String? @map("description") //짧은 소개
+  department  Department? @map("department")
+  MBTI        Mbti?       @map("mbti")
+  instaId     String?     @map("insta_id")
+  description String?     @map("description")
+
+  chatRoomMembers ChatRoomMember[]
+  chatMessages    ChatMessage[] @relation("ChatMessageSender")
+
+  blockedUsers UserBlock[] @relation("UserBlocker")
+  blockedBy    UserBlock[] @relation("UserBlocked")
+
 
   @@map("user")
+}
+
+model ChatRoom {
+  uuid      String   @id @default(uuid()) @db.Uuid
+  lineKey   String   @unique @map("line_key")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  members  ChatRoomMember[]
+  messages ChatMessage[]
+
+  @@map("chat_room")
+}
+
+model ChatRoomMember {
+  uuid     String    @id @default(uuid()) @db.Uuid
+  roomUuid String    @map("room_uuid") @db.Uuid
+  userUuid String    @map("user_uuid") @db.Uuid
+  joinedAt DateTime  @default(now()) @map("joined_at")
+  leftAt   DateTime? @map("left_at")
+
+  room ChatRoom @relation(fields: [roomUuid], references: [uuid], onDelete: Cascade)
+  user User     @relation(fields: [userUuid], references: [uuid], onDelete: Cascade)
+
+  @@unique([roomUuid, userUuid])
+  @@index([userUuid])
+  @@map("chat_room_member")
+}
+
+model ChatMessage {
+  uuid       String            @id @default(uuid()) @db.Uuid
+  roomUuid   String            @map("room_uuid") @db.Uuid
+  senderUuid String            @map("sender_uuid") @db.Uuid
+  status    ChatMessageStatus @default(ACTIVE)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at")
+  editedAt  DateTime? @map("edited_at")
+  deletedAt DateTime? @map("deleted_at")
+  
+  content   String @db.VarChar(255)
+
+  room   ChatRoom @relation(fields: [roomUuid], references: [uuid], onDelete: Cascade)
+  sender User     @relation("ChatMessageSender", fields: [senderUuid], references: [uuid], onDelete: Cascade)
+
+  @@index([roomUuid, createdAt])
+  @@map("chat_message")
+}
+
+model UserBlock {
+  uuid            String   @id @default(uuid()) @db.Uuid
+  blockerUserUuid String   @map("blocker_user_uuid") @db.Uuid
+  blockedUserUuid String   @map("blocked_user_uuid") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  blocker User @relation("UserBlocker", fields: [blockerUserUuid], references: [uuid], onDelete: Cascade)
+  blocked User @relation("UserBlocked", fields: [blockedUserUuid], references: [uuid], onDelete: Cascade)
+
+  @@unique([blockerUserUuid, blockedUserUuid])
+  @@index([blockedUserUuid])
+  @@map("user_block")
 }

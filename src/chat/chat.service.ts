@@ -1,0 +1,287 @@
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { ChatMessageStatus } from '../../generated/prisma/client';
+import {
+  ChatRepository,
+  ChatRoomEntity,
+  ChatUserForRoom,
+} from './chat.repository';
+import {
+  ChatMessageEntity,
+  ChatMessageResponseDto,
+  ChatRoomInfoDto,
+} from './dto/chat-message-response.dto';
+import { CustomConfigService } from '@lib/custom-config';
+
+export type MyBbunRoomContext = {
+  user: ChatUserForRoom;
+  room: ChatRoomEntity;
+  lineKey: string;
+};
+
+const STUDENT_NUMBER_REGEX = /^\d{8}$/;
+@Injectable()
+export class ChatService {
+  constructor(
+    private readonly chatRepository: ChatRepository,
+    private readonly customConfigService: CustomConfigService,
+  ) {}
+
+  async syncBbunRoomForUser(
+    userUuid: string,
+    studentNumber: string,
+  ): Promise<{
+    room: ChatRoomEntity;
+    lineKey: string;
+  }> {
+    const lineKey = this.extractLineKey(studentNumber);
+
+    const room = await this.chatRepository.findOrCreateRoomByLineKey(lineKey);
+
+    await this.chatRepository.upsertRoomMember(room.uuid, userUuid);
+
+    return {
+      room,
+      lineKey,
+    };
+  }
+
+  async getOrCreateMyBbunRoom(userUuid: string): Promise<MyBbunRoomContext> {
+    const user = await this.chatRepository.findUserByUuid(userUuid);
+
+    if (!user || user.deletedAt) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (!user.consent) {
+      throw new ForbiddenException('User consent is required');
+    }
+
+    const { room, lineKey } = await this.syncBbunRoomForUser(
+      user.uuid,
+      user.studentNumber,
+    );
+
+    return {
+      user,
+      room,
+      lineKey,
+    };
+  }
+
+  async saveChat(params: {
+    userUuid: string;
+    roomUuid: string;
+    message: string;
+  }): Promise<ChatMessageEntity> {
+    const content = this.normalizeMessage(params.message);
+
+    return this.chatRepository.createMessage({
+      roomUuid: params.roomUuid,
+      senderUuid: params.userUuid,
+      content,
+    });
+  }
+
+  async editChat(params: {
+    userUuid: string;
+    messageUuid: string;
+    message: string;
+  }): Promise<ChatMessageEntity> {
+    const message = await this.chatRepository.findMessageByUuid(
+      params.messageUuid,
+    );
+
+    if (!message) {
+      throw new NotFoundException('Message not found');
+    }
+
+    if (message.senderUuid !== params.userUuid) {
+      throw new ForbiddenException('Cannot edit other user message');
+    }
+
+    if (message.status === ChatMessageStatus.DELETED) {
+      throw new ForbiddenException('Cannot edit deleted message');
+    }
+
+    if (
+      Date.now() - message.createdAt.getTime() >
+      this.customConfigService.EDIT_LIMIT_MS
+    ) {
+      throw new ForbiddenException('Edit time expired');
+    }
+
+    const content = this.normalizeMessage(params.message);
+
+    return this.chatRepository.editMessage(params.messageUuid, content);
+  }
+
+  async deleteChat(params: {
+    userUuid: string;
+    messageUuid: string;
+  }): Promise<ChatMessageEntity> {
+    const message = await this.chatRepository.findMessageByUuid(
+      params.messageUuid,
+    );
+
+    if (!message) {
+      throw new NotFoundException('Message not found');
+    }
+
+    if (message.senderUuid !== params.userUuid) {
+      throw new ForbiddenException('Cannot delete other user message');
+    }
+
+    if (message.status === ChatMessageStatus.DELETED) {
+      return message;
+    }
+
+    return this.chatRepository.softDeleteMessage(params.messageUuid);
+  }
+
+  async getRecentMessages(params: {
+    userUuid: string;
+    take?: number;
+    cursor?: string;
+  }): Promise<ChatMessageResponseDto[]> {
+    const { room } = await this.getOrCreateMyBbunRoom(params.userUuid);
+
+    const take = this.normalizeTake(params.take);
+
+    const messages = await this.chatRepository.getRecentMessages({
+      roomUuid: room.uuid,
+      userUuid: params.userUuid,
+      take,
+      cursor: params.cursor,
+    });
+
+    return messages.map((message) => this.toMessageResponse(message)).reverse();
+  }
+
+  async searchMessages(params: {
+    userUuid: string;
+    keyword: string;
+    take?: number;
+    cursor?: string;
+  }): Promise<ChatMessageResponseDto[]> {
+    const keyword = this.normalizeSearchKeyword(params.keyword);
+    const { room } = await this.getOrCreateMyBbunRoom(params.userUuid);
+    const take = this.normalizeTake(params.take);
+
+    const messages = await this.chatRepository.searchMessages({
+      roomUuid: room.uuid,
+      userUuid: params.userUuid,
+      keyword,
+      take,
+      cursor: params.cursor,
+    });
+
+    return messages.map((message) => this.toMessageResponse(message));
+  }
+
+  async blockUser(params: {
+    blockerUserUuid: string;
+    blockedUserUuid: string;
+  }): Promise<void> {
+    if (params.blockerUserUuid === params.blockedUserUuid) {
+      throw new BadRequestException('Cannot block yourself');
+    }
+
+    await this.chatRepository.blockUser(
+      params.blockerUserUuid,
+      params.blockedUserUuid,
+    );
+  }
+
+  async unblockUser(params: {
+    blockerUserUuid: string;
+    blockedUserUuid: string;
+  }): Promise<{ count: number }> {
+    return this.chatRepository.unblockUser(
+      params.blockerUserUuid,
+      params.blockedUserUuid,
+    );
+  }
+
+  async leaveAllRoomsForUser(userUuid: string): Promise<{ count: number }> {
+    return this.chatRepository.leaveAllRoomsByUserUuid(userUuid);
+  }
+
+  async getMyChatRoomInfo(userUuid: string): Promise<ChatRoomInfoDto> {
+    const { room, lineKey } = await this.getOrCreateMyBbunRoom(userUuid);
+    const users = await this.chatRepository.findRoomUsers(room.uuid);
+
+    return {
+      roomUuid: room.uuid,
+      lineKey,
+      users,
+    };
+  }
+
+  async getReceiverUuidsBlockingSender(
+    senderUserUuid: string,
+  ): Promise<string[]> {
+    return this.chatRepository.findReceiverUuidsBlockingSender(senderUserUuid);
+  }
+
+  toMessageResponse(message: ChatMessageEntity): ChatMessageResponseDto {
+    const isDeleted = message.status === ChatMessageStatus.DELETED;
+
+    return {
+      messageUuid: message.uuid,
+      roomUuid: message.roomUuid,
+      senderUuid: message.senderUuid,
+      message: isDeleted ? '메시지가 삭제되었습니다.' : message.content,
+      status: message.status,
+      createdAt: message.createdAt,
+      editedAt: message.editedAt,
+      deletedAt: message.deletedAt,
+    };
+  }
+
+  private normalizeMessage(message: string): string {
+    const content = message.trim();
+
+    if (!content) {
+      throw new ForbiddenException('Message is empty');
+    }
+
+    if (content.length > this.customConfigService.MAX_MESSAGE_LENGTH) {
+      throw new ForbiddenException('Message is too long');
+    }
+    return content;
+  }
+  private normalizeSearchKeyword(keyword: string): string {
+    const normalizedKeyword = keyword.trim();
+
+    if (!normalizedKeyword) {
+      throw new BadRequestException('Search keyword is empty');
+    }
+
+    if (normalizedKeyword.length > 255) {
+      throw new BadRequestException('Search keyword is too long');
+    }
+
+    return normalizedKeyword;
+  }
+
+  private normalizeTake(take?: number): number {
+    if (!take) return this.customConfigService.DEFAULT_MESSAGE_TAKE;
+    return Math.min(
+      Math.max(take, 1),
+      this.customConfigService.MAX_MESSAGE_TAKE,
+    );
+  }
+
+  private extractLineKey(studentNumber: string) {
+    if (!STUDENT_NUMBER_REGEX.test(studentNumber)) {
+      throw new ForbiddenException('Invalid student number');
+    }
+
+    return studentNumber.slice(-4);
+  }
+}

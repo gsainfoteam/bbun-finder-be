@@ -5,9 +5,12 @@ import expressBasicAuth from 'express-basic-auth';
 import { json } from 'express';
 import cookieParser from 'cookie-parser';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { WebsocketAdapter } from './websocket/websocket.adapter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.useWebSocketAdapter(new WebsocketAdapter(app));
 
   // get configurations from .env
   const customConfigService = app.get(CustomConfigService);
@@ -32,6 +35,7 @@ async function bootstrap() {
     /https:\/\/bbun.gistory.me/,
     /https:\/\/.*bbun-fe.pages.dev/,
   ];
+
   app.enableCors({
     origin: function (
       origin: string | undefined,

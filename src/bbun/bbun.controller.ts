@@ -8,9 +8,9 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { BbunService } from './bbun.service';
-import { JwtGuard } from 'src/auth/guards/jwt.guard';
-import { GetUser } from 'src/auth/decorators/getUser.decorator';
-import { Prisma } from 'generated/prisma/client';
+import { JwtGuard } from '../auth/guards/jwt.guard';
+import { GetUser } from '../auth/decorators/getUser.decorator';
+import { Prisma } from '../../generated/prisma/client';
 import { UserListResDto } from './dto/res/UserListRes.dto';
 
 @ApiTags('bbun')

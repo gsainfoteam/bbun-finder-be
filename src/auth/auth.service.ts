@@ -6,12 +6,20 @@ import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
 import ms, { StringValue } from 'ms';
 import { IssueTokenType, JwtTokenType } from './types/jwtToken.types';
-import { RedisService } from 'libs/redis/src';
+import { RedisService } from '@lib/redis';
 import {
   IdTokenPayloadType,
   InfoteamAccountService,
 } from '@lib/infoteam-account';
-import { Prisma } from 'generated/prisma/client';
+import { Prisma } from '../../generated/prisma/client';
+
+type WsJwtPayload = {
+  sub: string;
+  exp: number;
+  iat: number;
+  iss: string;
+  aud: string;
+};
 
 @Injectable()
 @Loggable()
@@ -69,9 +77,11 @@ export class AuthService {
         throw new UnauthorizedException('Invalid refresh token');
       });
     const user = await this.authRepository.findExistUserByUuid(uuid);
+
     await this.redisService.del(refreshToken, {
       prefix: this.refreshTokenPrefix,
     });
+
     const { access_token, refresh_token } = await this.issueTokens(user.uuid);
     return {
       access_token,
@@ -100,6 +110,31 @@ export class AuthService {
     return await this.authRepository.findExistUserByUuid(uuid);
   }
 
+  async validateWsAccessToken(accessToken: string): Promise<{
+    user: Prisma.UserModel;
+    validUntil: Date;
+  }> {
+    let payload: WsJwtPayload;
+    try {
+      payload = await this.jwtService.verifyAsync<WsJwtPayload>(accessToken, {
+        secret: this.customConfigService.JWT_SECRET,
+        audience: this.customConfigService.JWT_AUDIENCE,
+        issuer: this.customConfigService.JWT_ISSUER,
+      });
+    } catch (err) {
+      this.logger.error('validateWsAccessToken Error');
+      this.logger.debug(err);
+      throw new UnauthorizedException('Invalid access token');
+    }
+    const user = await this.authRepository.findExistUserByUuid(payload.sub);
+    //사용자 없는 경우, Repsitory 단에서 401 뜸
+
+    return {
+      user,
+      validUntil: new Date(payload.exp * 1000),
+    };
+  }
+
   private generateOpaqueToken() {
     return crypto
       .randomBytes(32)
@@ -113,6 +148,7 @@ export class AuthService {
       prefix: this.refreshTokenPrefix,
       ttl: this.refreshTokenExpire / 1000,
     });
+
     return {
       access_token: this.jwtService.sign({}, { subject: uuid }),
       refresh_token,

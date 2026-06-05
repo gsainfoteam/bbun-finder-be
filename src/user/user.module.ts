@@ -5,9 +5,10 @@ import { Module } from '@nestjs/common';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { UserRepository } from './user.repository';
+import { ChatModule } from '../chat/chat.module';
 
 @Module({
-  imports: [PrismaModule, EmailModule, CustomConfigModule],
+  imports: [PrismaModule, EmailModule, CustomConfigModule, ChatModule],
   controllers: [UserController],
   providers: [UserService, UserRepository],
   exports: [UserRepository],

@@ -3,6 +3,8 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   ParseIntPipe,
   Post,
   Query,
@@ -10,7 +12,16 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiNoContentResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { Prisma } from '../../generated/prisma/client';
 import { JwtGuard } from '../auth/guards/jwt.guard';
 import { GetUser } from '../auth/decorators/getUser.decorator';
@@ -23,14 +34,43 @@ import {
 import { SearchChatMessagesQueryDto } from './dto/search-chat-messages-query.dto';
 
 @ApiTags('chat')
+@ApiBearerAuth('jwt')
 @Controller('chat')
-@UsePipes(ValidationPipe)
+@UseGuards(JwtGuard)
+@UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
-  @ApiBearerAuth('jwt')
   @Get('messages')
-  @UseGuards(JwtGuard)
+  @ApiOperation({
+    summary: '최근 채팅 메시지 조회',
+    description:
+      '현재 사용자가 열람 가능한 최근 채팅 메시지를 cursor 기반으로 조회합니다.',
+  })
+  @ApiQuery({
+    name: 'cursor',
+    required: false,
+    type: String,
+    description: '다음 페이지 조회를 위한 메시지 cursor',
+  })
+  @ApiQuery({
+    name: 'take',
+    required: false,
+    type: Number,
+    description: '조회할 메시지 개수. 1 이상 100 이하만 허용됩니다.',
+    example: 30,
+  })
+  @ApiOkResponse({
+    description: '채팅 메시지 조회 성공',
+    type: ChatMessageResponseDto,
+    isArray: true,
+  })
+  @ApiBadRequestResponse({
+    description: 'take 값이 허용 범위를 벗어나거나 잘못된 형식인 경우',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'JWT 인증 실패',
+  })
   async getMessages(
     @GetUser() user: Prisma.UserModel,
     @Query('cursor') cursor?: string,
@@ -49,10 +89,23 @@ export class ChatController {
     });
   }
 
-  @ApiBearerAuth('jwt')
   @Get('messages/search')
-  @UseGuards(JwtGuard)
-  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  @ApiOperation({
+    summary: '채팅 메시지 검색',
+    description:
+      '키워드를 기준으로 현재 사용자가 열람 가능한 채팅 메시지를 검색합니다.',
+  })
+  @ApiOkResponse({
+    description: '채팅 메시지 검색 성공',
+    type: ChatMessageResponseDto,
+    isArray: true,
+  })
+  @ApiBadRequestResponse({
+    description: '검색 Query 형식이 올바르지 않은 경우',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'JWT 인증 실패',
+  })
   async searchMessages(
     @GetUser() user: Prisma.UserModel,
     @Query() query: SearchChatMessagesQueryDto,
@@ -65,9 +118,21 @@ export class ChatController {
     });
   }
 
-  @ApiBearerAuth('jwt')
   @Post('block')
-  @UseGuards(JwtGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: '사용자 차단',
+    description: '현재 사용자가 특정 사용자를 채팅에서 차단합니다.',
+  })
+  @ApiNoContentResponse({
+    description: '사용자 차단 성공',
+  })
+  @ApiBadRequestResponse({
+    description: '대상 사용자 UUID가 올바르지 않거나 차단할 수 없는 경우',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'JWT 인증 실패',
+  })
   async blockUser(
     @GetUser() user: Prisma.UserModel,
     @Body() body: WsBlockUserReqDto,
@@ -78,9 +143,31 @@ export class ChatController {
     });
   }
 
-  @ApiBearerAuth('jwt')
   @Post('unblock')
-  @UseGuards(JwtGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: '사용자 차단 해제',
+    description: '현재 사용자가 차단한 사용자를 차단 목록에서 제거합니다.',
+  })
+  @ApiOkResponse({
+    description: '사용자 차단 해제 성공',
+    schema: {
+      type: 'object',
+      properties: {
+        count: {
+          type: 'number',
+          description: '삭제된 차단 관계 개수',
+          example: 1,
+        },
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description: '대상 사용자 UUID가 올바르지 않은 경우',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'JWT 인증 실패',
+  })
   async unblockUser(
     @GetUser() user: Prisma.UserModel,
     @Body() body: WsBlockUserReqDto,
@@ -91,9 +178,18 @@ export class ChatController {
     });
   }
 
-  @ApiBearerAuth('jwt')
   @Get('info')
-  @UseGuards(JwtGuard)
+  @ApiOperation({
+    summary: '채팅방 정보 조회',
+    description: '현재 사용자의 채팅방 정보를 조회합니다.',
+  })
+  @ApiOkResponse({
+    description: '채팅방 정보 조회 성공',
+    type: ChatRoomInfoDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'JWT 인증 실패',
+  })
   async getChatRoomInfo(
     @GetUser() user: Prisma.UserModel,
   ): Promise<ChatRoomInfoDto> {

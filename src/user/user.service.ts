@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
 import { UserRepository } from './user.repository';
 import { Loggable } from '@lib/logger/decorator/loggable';
 import { CustomConfigService } from '@lib/custom-config';
@@ -8,6 +8,7 @@ import { Prisma } from '../../generated/prisma/client';
 import { UserResDto } from './dto/res/userRes.dto';
 import { UpdateDataDto } from './dto/req/updateData.dto';
 import { ChatService } from '../chat/chat.service';
+import { UpdateStudentNumberDto } from './dto/req/updateStudentNumber.dto';
 
 @Injectable()
 @Loggable()
@@ -48,5 +49,29 @@ export class UserService {
     UpdateData: UpdateDataDto,
   ): Promise<UserResDto> {
     return this.userRepository.updateUserInfo(uuid, UpdateData);
+  }
+  // staging 테스트용 학번 변경
+  async updateStudentNumberForStaging(
+    uuid: string,
+    updateStudentNumberDto: UpdateStudentNumberDto,
+  ): Promise<UserResDto> {
+    if (process.env.APP_ENV !== 'staging') {
+      throw new ForbiddenException(
+        'This API is only available in the staging environment',
+      );
+    }
+
+    const updatedUser = await this.userRepository.updateStudentNumber(
+      uuid,
+      updateStudentNumberDto.studentNumber,
+    );
+
+    // 변경된 학번을 기준으로 뻔라인 채팅방 다시 동기화
+    await this.chatService.syncBbunRoomForUser(
+      updatedUser.uuid,
+      updatedUser.studentNumber,
+    );
+
+    return updatedUser;
   }
 }

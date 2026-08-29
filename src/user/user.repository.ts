@@ -163,47 +163,4 @@ export class UserRepository {
         throw new InternalServerErrorException('Unknown Error');
       });
   }
-
-  // staging 테스트용 학번 변경
-  async updateStudentNumber(
-    uuid: string,
-    studentNumber: string,
-  ): Promise<Prisma.UserModel> {
-    return await this.prismaService.user
-      .update({
-        where: {
-          uuid,
-          deletedAt: null,
-        },
-        data: {
-          studentNumber,
-        },
-      })
-      .catch((err) => {
-        if (err instanceof Prisma.PrismaClientKnownRequestError) {
-          if (err.code === 'P2025') {
-            this.logger.error('updateStudentNumber Error');
-            this.logger.debug(err);
-            throw new NotFoundException(`User with uuid ${uuid} not found`);
-          }
-
-          if (err.code === 'P2002') {
-            this.logger.error('updateStudentNumber Error');
-            this.logger.debug('Student number already exists');
-
-            throw new ConflictException(
-              `Student number ${studentNumber} already exists`,
-            );
-          }
-
-          this.logger.error('updateStudentNumber Error');
-          this.logger.debug(err);
-          throw new InternalServerErrorException('Database Error');
-        }
-
-        this.logger.error('updateStudentNumber Error');
-        this.logger.debug(err);
-        throw new InternalServerErrorException('Unknown Error');
-      });
-  }
 }

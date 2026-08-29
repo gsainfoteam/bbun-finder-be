@@ -11,10 +11,7 @@ import {
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import {
-  ApiBadRequestResponse,
   ApiBearerAuth,
-  ApiConflictResponse,
-  ApiForbiddenResponse,
   ApiInternalServerErrorResponse,
   ApiOAuth2,
   ApiOkResponse,
@@ -30,7 +27,6 @@ import * as infoteamAccount from '@lib/infoteam-account';
 import { Prisma } from '../../generated/prisma/client';
 import { UserResDto } from './dto/res/userRes.dto';
 import { UpdateDataDto } from './dto/req/updateData.dto';
-import { UpdateStudentNumberDto } from './dto/req/updateStudentNumber.dto';
 
 @ApiTags('user')
 @Controller('user')
@@ -101,42 +97,5 @@ export class UserController {
   @UseGuards(JwtGuard)
   async deleteUser(@GetUser() user: Prisma.UserModel): Promise<void> {
     return await this.userService.deleteUser(user);
-  }
-
-  @ApiOperation({
-    summary: '[STAGING ONLY] 테스트용 학번 변경',
-    description:
-      'Change the logged-in user student number for bbunline chat testing. Available only in staging.',
-  })
-  @ApiBearerAuth('jwt')
-  @ApiOkResponse({
-    type: UserResDto,
-    description: 'Student number updated successfully',
-  })
-  @ApiBadRequestResponse({
-    description: 'Invalid student number',
-  })
-  @ApiConflictResponse({
-    description: 'Student number already exists',
-  })
-  @ApiForbiddenResponse({
-    description: 'This API is only available in staging',
-  })
-  @ApiUnauthorizedResponse({
-    description: 'Unauthorized',
-  })
-  @ApiInternalServerErrorResponse({
-    description: 'Internal Server Error',
-  })
-  @Patch('staging/student-number')
-  @UseGuards(JwtGuard)
-  async updateStudentNumberForStaging(
-    @GetUser() user: Prisma.UserModel,
-    @Body() updateStudentNumberDto: UpdateStudentNumberDto,
-  ): Promise<UserResDto> {
-    return this.userService.updateStudentNumberForStaging(
-      user.uuid,
-      updateStudentNumberDto,
-    );
   }
 }

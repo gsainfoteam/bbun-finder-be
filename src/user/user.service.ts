@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { UserRepository } from './user.repository';
 import { Loggable } from '@lib/logger/decorator/loggable';
 import { CustomConfigService } from '@lib/custom-config';
@@ -55,11 +55,11 @@ export class UserService {
     uuid: string,
     updateStudentNumberDto: UpdateStudentNumberDto,
   ): Promise<UserResDto> {
-    if (process.env.APP_ENV !== 'staging') {
-      throw new ForbiddenException(
-        'This API is only available in the staging environment',
-      );
-    }
+    // if (process.env.APP_ENV !== 'staging') {
+    //   throw new ForbiddenException(
+    //     'This API is only available in the staging environment',
+    //   );
+    // }
 
     const updatedUser = await this.userRepository.updateStudentNumber(
       uuid,

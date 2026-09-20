@@ -7,7 +7,7 @@ COPY package.json package-lock.json ./
 
 RUN apk update && \
   apk add build-base libheif vips-dev vips -q
-RUN npm install --platform=linuxmusl
+RUN --mount=type=secret,id=npmrc,target=/root/.npmrc npm install --platform=linuxmusl
 
 COPY . .
 
@@ -27,7 +27,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone &
 
 COPY --from=builder /app ./
 
-RUN npm install -D prisma --platform=linuxmusl
+RUN --mount=type=secret,id=npmrc,target=/root/.npmrc npm install -D prisma --platform=linuxmusl
 
 EXPOSE 3000
 

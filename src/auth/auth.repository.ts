@@ -7,7 +7,9 @@ import {
 import { PrismaService } from '@lib/prisma';
 import { Loggable } from '@lib/logger/decorator/loggable';
 import { Prisma } from '../../generated/prisma/client';
+import { Trace } from '@gsainfoteam/nest-observability';
 
+@Trace()
 @Injectable()
 @Loggable()
 export class AuthRepository {

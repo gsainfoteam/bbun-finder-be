@@ -4,7 +4,9 @@ import Redis from 'ioredis';
 import { CacheNotFoundException } from './exceptions/cacheNotFound.exception';
 import { CacheConfig } from './types/cacheConfig.type';
 import { CustomConfigService } from '@lib/custom-config';
+import { Trace } from '@gsainfoteam/nest-observability';
 
+@Trace()
 @Injectable()
 export class RedisService implements OnModuleDestroy {
   private readonly redisClient: Redis;

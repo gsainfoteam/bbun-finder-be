@@ -13,6 +13,7 @@ import {
   ChatMessageEntity,
   ChatRoomUserDto,
 } from './dto/chat-message-response.dto';
+import { Trace } from '@gsainfoteam/nest-observability';
 
 export type ChatUserForRoom = {
   uuid: string;
@@ -43,6 +44,8 @@ type PrismaErrorOption = {
   conflictMessage?: string;
   foreignKeyMessage?: string;
 };
+
+@Trace()
 @Injectable()
 @Loggable()
 export class ChatRepository {

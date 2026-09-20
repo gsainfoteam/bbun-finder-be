@@ -6,6 +6,11 @@ import { json } from 'express';
 import cookieParser from 'cookie-parser';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { WebsocketAdapter } from './websocket/websocket.adapter';
+import { Logger } from '@nestjs/common';
+import {
+  initializeMetrics,
+  MetricsInterceptor,
+} from '@gsainfoteam/nest-observability';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -107,8 +112,23 @@ async function bootstrap() {
       },
     },
   });
+
+  app.useGlobalInterceptors(new MetricsInterceptor());
+
   // start server
   await app.listen(3000);
 }
-// eslint-disable-next-line @typescript-eslint/no-floating-promises
-bootstrap();
+
+const bootstrapWithOTEL = async () => {
+  const logger = new Logger('Bootstrap');
+  try {
+    const serviceName = process.env.OTEL_SERVICE_NAME ?? 'bbun-be';
+    initializeMetrics(serviceName);
+    await bootstrap();
+  } catch (error) {
+    logger.error('Failed to bootstrap application', error);
+    process.exit(1);
+  }
+};
+
+void bootstrapWithOTEL();

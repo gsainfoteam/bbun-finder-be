@@ -6,6 +6,7 @@ import { ChatModule } from './chat/chat.module';
 import { CustomConfigModule } from '@lib/custom-config';
 import { BbunModule } from './bbun/bbun.module';
 import { WebsocketModule } from './websocket/websocket.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { WebsocketModule } from './websocket/websocket.module';
     BbunModule,
     WebsocketModule,
     ChatModule,
+    HealthModule,
   ],
   controllers: [AppController],
 })

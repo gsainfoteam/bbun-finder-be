@@ -5,7 +5,9 @@ import { JwtService } from '@nestjs/jwt';
 import { createPublicKey } from 'crypto';
 import { firstValueFrom } from 'rxjs';
 import { IdTokenPayloadType } from './types/idTokenPayload.type';
+import { Trace } from '@gsainfoteam/nest-observability';
 
+@Trace()
 @Injectable()
 export class InfoteamAccountService implements OnModuleInit {
   private readonly logger = new Logger(InfoteamAccountService.name, {

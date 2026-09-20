@@ -12,6 +12,7 @@ import {
   InfoteamAccountService,
 } from '@lib/infoteam-account';
 import { Prisma } from '../../generated/prisma/client';
+import { Trace } from '@gsainfoteam/nest-observability';
 
 type WsJwtPayload = {
   sub: string;
@@ -22,6 +23,7 @@ type WsJwtPayload = {
 };
 
 @Injectable()
+@Trace()
 @Loggable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);

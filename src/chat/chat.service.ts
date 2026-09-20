@@ -16,6 +16,7 @@ import {
   ChatRoomInfoDto,
 } from './dto/chat-message-response.dto';
 import { CustomConfigService } from '@lib/custom-config';
+import { Trace } from '@gsainfoteam/nest-observability';
 
 export type MyBbunRoomContext = {
   user: ChatUserForRoom;
@@ -24,6 +25,8 @@ export type MyBbunRoomContext = {
 };
 
 const STUDENT_NUMBER_REGEX = /^\d{8}$/;
+
+@Trace()
 @Injectable()
 export class ChatService {
   constructor(

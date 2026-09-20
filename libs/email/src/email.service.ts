@@ -1,7 +1,9 @@
 import { CustomConfigService } from '@lib/custom-config';
 import { MailerService } from '@nestjs-modules/mailer';
 import { Injectable, Logger } from '@nestjs/common';
+import { Trace } from '@gsainfoteam/nest-observability';
 
+@Trace()
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);

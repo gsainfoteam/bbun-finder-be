@@ -8,7 +8,9 @@ import { Prisma } from '../../generated/prisma/client';
 import { UserResDto } from './dto/res/userRes.dto';
 import { UpdateDataDto } from './dto/req/updateData.dto';
 import { ChatService } from '../chat/chat.service';
+import { Trace } from '@gsainfoteam/nest-observability';
 
+@Trace()
 @Injectable()
 @Loggable()
 export class UserService {

@@ -10,7 +10,9 @@ import { Loggable } from '@lib/logger/decorator/loggable';
 import { IdTokenPayloadType } from '@lib/infoteam-account';
 import { Prisma } from '../../generated/prisma/client';
 import { UpdateDataDto } from './dto/req/updateData.dto';
+import { Trace } from '@gsainfoteam/nest-observability';
 
+@Trace()
 @Injectable()
 @Loggable()
 export class UserRepository {

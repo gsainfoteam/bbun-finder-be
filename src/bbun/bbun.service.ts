@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { UserResDto } from '../user/dto/res/userRes.dto';
 import { UserRepository } from '../user/user.repository';
+import { Trace } from '@gsainfoteam/nest-observability';
 
+@Trace()
 @Injectable()
 export class BbunService {
   constructor(private readonly userRepository: UserRepository) {}

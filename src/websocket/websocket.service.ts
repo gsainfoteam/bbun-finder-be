@@ -5,6 +5,7 @@ import { randomUUID } from 'node:crypto';
 import { AuthorizeClientParams, BbunWsClient } from './websocket.client';
 import { WsBaseDto } from './dto/ws-base.dto';
 import { WsAuthorizationReqDto } from './dto/ws-authorization.dto';
+import { Trace } from '@gsainfoteam/nest-observability';
 
 type CheckClientResult = {
   client: BbunWsClient;
@@ -15,6 +16,7 @@ type BroadcastOptions = {
   excludeUserUuids?: string[];
 };
 
+@Trace()
 @Injectable()
 export class WebsocketService {
   private readonly AUTHORIZATION_TIMEOUT_MS = 30 * 1000;

@@ -3,7 +3,10 @@ const nodeExternals = require('webpack-node-externals');
 module.exports = function (options) {
   return {
     ...options,
-    entry: options.entry,
+    entry: {
+      main: path.resolve(__dirname, 'src/main.ts'),
+      instrumentation: path.resolve(__dirname, 'src/instrumentation.ts'),
+    },
     externals: [
       nodeExternals({
         allowlist: [/^file-type/],
@@ -15,6 +18,11 @@ module.exports = function (options) {
       extensionAlias: {
         '.js': ['.ts', '.js'],
       },
+    },
+    output: {
+      ...options.output,
+      path: path.resolve(__dirname, 'dist'),
+      filename: '[name].js',
     },
   };
 };

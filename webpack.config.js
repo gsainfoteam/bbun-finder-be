@@ -6,7 +6,7 @@ module.exports = function (options) {
     ...options,
     entry: {
       main: path.resolve(__dirname, 'src/main.ts'),
-      instrumentation: path.resolve(__dirname, 'src/instrumentation.ts'),
+      instrumentation: path.resolve(__dirname, 'src/instrumentation.mts'),
     },
     externals: [
       nodeExternals({

@@ -33,7 +33,7 @@ export class HealthController {
       () =>
         this.http.pingCheck(
           'infoteam-account',
-          this.configService.INFOTEAM_ACCOUNT_BASE_URL,
+          `${this.configService.INFOTEAM_ACCOUNT_BASE_URL}/health`,
         ),
       () =>
         this.prisma.pingCheck('database', this.prismaService, {
